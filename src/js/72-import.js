@@ -53,7 +53,7 @@ function applyVectors(vec){ // vec coordinates are lat/lon; make sure a home poi
   if (!geo){ var src = vec.route && vec.route.length ? vec.route : vec.poly;
     if (vec.route && vec.route.length){ var g0 = mkGeo(src[0].lat, src[0].lon); geo = mkGeo(src[0].lat - 5/g0.mLat, src[0].lon); }
     else { var s = Infinity, lo = 0; src.forEach(function(c){ s = Math.min(s, c.lat); lo += c.lon/src.length; }); var g1 = mkGeo(s, lo); geo = mkGeo(s - 6/g1.mLat, lo); } }
-  var defAlt = num('pAlt', 5, 120, 40);
+  var defAlt = planNum('pAlt', 'alt');
   if (vec.poly && vec.poly.length >= 3){ var pp = vec.poly.map(function(c){ return ll2xz(c.lat, c.lon); }); var a = pp[0], b = pp[pp.length - 1]; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 0.01) pp.pop(); poly = pp; setPlanMode('area'); }
   if (vec.route && vec.route.length){ route = vec.route.slice(0, 200).map(function(c){ var q = ll2xz(c.lat, c.lon); return { x: q[0], z: q[1], alt: c.alt > 1 ? clamp(Math.round(c.alt), 2, 120) : defAlt, act: 'none' }; }); if (!vec.poly) setPlanMode('route'); }
 }

@@ -43,6 +43,35 @@ test('local conversion round trip', function(){ vm.runInContext('geo = mkGeo(34.
 test('CSV waypoints with a header row', function(){ var r = G.parseCSV('Latitude,Longitude,Altitude(m)\n34.68,-82.84,30\n34.681,-82.839,40').route; assert.strictEqual(r.length, 2); assert.strictEqual(r[1].alt, 40); });
 test('GeoJSON polygon', function(){ var o = G.parseGeoJSON(JSON.stringify({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[-82.84, 34.68], [-82.839, 34.68], [-82.839, 34.681], [-82.84, 34.68]]] } })); assert.strictEqual(o.poly.length, 4); });
 
+// ---- plan computation and movable home (pure functions from the same slice of 70-planner.js) ----
+console.log('plan computation and home shift');
+var HA = [[-50, -106], [50, -106], [50, -6], [-50, -6]]; // 1 ha square, 6 m north of home
+function areaPlan(poly, o){ return G.planCompute(Object.assign({ cam: G.CAMERAS[1], alt: 40, front: 75, side: 70, speed: 5, dirDeg: 0, endurance: 20, mode: 'area', poly: poly, route: [] }, o || {})); }
+test('verified case: 1 ha, 40 m, 20 MP, 75/70 -> 1.10 cm/px, 18 m, 10 m, 6 lines, 66 photos', function(){ var P = areaPlan(HA);
+  assert.strictEqual(P.gsd.toFixed(2), '1.10'); assert(Math.abs(P.W - 60) < 1e-9 && Math.abs(P.L - 40) < 1e-9); assert(Math.abs(P.spacing - 18) < 1e-9); assert(Math.abs(P.trig - 10) < 1e-9); assert(Math.abs(P.interval - 2) < 1e-9);
+  assert(Math.abs(P.area - 10000) < 1e-6); assert.strictEqual(P.lines.length, 6); assert.strictEqual(P.shots.length, 66); assert(P.ok); });
+test('area plan starts and ends at home and marks survey legs', function(){ var P = areaPlan(HA), w = P.wps; assert.strictEqual(w.length, 14);
+  assert(w[0].x === 0 && w[0].z === 0 && w[13].x === 0 && w[13].z === 0 && w[0].y === 40); assert.strictEqual(w.filter(function(q){ return q.survey; }).length, 6);
+  assert(Math.hypot(w[1].x, w[1].z) <= Math.hypot(w[12].x, w[12].z), 'pattern should start at the end nearest home'); });
+test('line direction 90 gives east-west lines', function(){ var P = areaPlan(HA, { dirDeg: 90 }); assert.strictEqual(P.lines.length, 6); P.lines.forEach(function(l){ assert(Math.abs(l[0][1] - l[1][1]) < 1e-6); }); });
+test('fewer than three corners gives no plan', function(){ var P = areaPlan(HA.slice(0, 2)); assert(!P.ok); assert.strictEqual(P.wps.length, 0); });
+test('route plan: holds, photos, length, and home legs', function(){
+  var P = G.planCompute({ cam: G.CAMERAS[1], alt: 40, front: 75, side: 70, speed: 5, dirDeg: 0, endurance: 20, mode: 'route', poly: [], route: [{ x: 0, z: -30, alt: 20, act: 'photo' }, { x: 40, z: -30, alt: 30, act: 'hover' }] });
+  assert(P.ok); assert.strictEqual(P.wps.length, 4); assert.strictEqual(P.shots.length, 1); assert.strictEqual(P.wps[1].hold, 1.5); assert.strictEqual(P.wps[2].hold, 5); assert(Math.abs(P.dist - 120) < 1e-9); assert.strictEqual(P.wps[3].y, 30); });
+function llOf(pts, g){ return pts.map(function(p){ return G.xz2ll(p[0], p[1], g); }); }
+test('home shift keeps the polygon latitude and longitude', function(){ var g0 = G.mkGeo(34.68, -82.84), before = llOf(HA, g0);
+  var s = G.shiftHome({ geo: g0, poly: HA, route: [{ x: 10, z: -20, alt: 30, act: 'photo' }], track: [[1, -2]], field: { w: 200, h: 120, cx: 0, cz: -66 } }, 35, -140), after = llOf(s.poly, s.geo);
+  before.forEach(function(b, i){ assert(Math.abs(b[0] - after[i][0]) < 1e-10 && Math.abs(b[1] - after[i][1]) < 1e-10, 'corner ' + i + ' moved'); });
+  var r0 = G.xz2ll(10, -20, g0), r1 = G.xz2ll(s.route[0].x, s.route[0].z, s.geo); assert(Math.abs(r0[0] - r1[0]) < 1e-10 && Math.abs(r0[1] - r1[1]) < 1e-10);
+  assert.strictEqual(s.route[0].alt, 30); assert.strictEqual(s.route[0].act, 'photo'); });
+test('home shift puts the new home at the clicked point', function(){ var g0 = G.mkGeo(34.68, -82.84), h = G.xz2ll(35, -140, g0), s = G.shiftHome({ geo: g0, poly: HA }, 35, -140);
+  assert(Math.abs(s.geo.lat0 - h[0]) < 1e-12 && Math.abs(s.geo.lon0 - h[1]) < 1e-12); assert(Math.abs(s.poly[0][0] - (-85)) < 0.01 && Math.abs(s.poly[0][1] - 34) < 0.01); });
+test('home shift without a georeference is a plain offset', function(){ var s = G.shiftHome({ geo: null, poly: HA, route: [{ x: 10, z: -20, alt: 30, act: 'none' }], track: [[1, -2]], field: { w: 200, h: 120, cx: 0, cz: -66 } }, 35, -140);
+  assert.strictEqual(s.geo, null); assert.deepStrictEqual(JSON.parse(JSON.stringify(s.poly[2])), [15, 134]); assert.deepStrictEqual(JSON.parse(JSON.stringify(s.track[0])), [-34, 138]);
+  assert(s.route[0].x === -25 && s.route[0].z === 120); assert(s.field.cx === -35 && s.field.cz === 74 && s.field.w === 200 && s.field.h === 120); });
+test('home shift does not modify its input and keeps the survey the same', function(){ var g0 = G.mkGeo(34.68, -82.84), copy = JSON.stringify(HA), s = G.shiftHome({ geo: g0, poly: HA }, -20, -60);
+  assert.strictEqual(JSON.stringify(HA), copy); var A = areaPlan(HA), B = areaPlan(s.poly); assert.strictEqual(B.lines.length, A.lines.length); assert.strictEqual(B.shots.length, A.shots.length); assert(Math.abs(B.area/A.area - 1) < 1e-4, 'area ratio ' + B.area/A.area); }); // re-anchoring the tangent plane rescales local meters by a few ppm
+
 // ---- build ----
 console.log('build');
 test('index.html is up to date with src/ (run "npm run build" if this fails)', function(){

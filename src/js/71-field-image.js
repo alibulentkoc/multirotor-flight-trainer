@@ -1,5 +1,5 @@
 // --- scale from two points (for screenshots with no georeference) ---
-$('calibStart').addEventListener('click', function(){ if (!fieldRect){ geoNote('Load a field image first, then set its scale.'); return; } calib = { pts: [] }; $('calibBox').hidden = true; $('calibMsg').textContent = 'Click the first of two points whose true distance you know.'; });
+$('calibStart').addEventListener('click', function(){ if (!fieldRect){ geoNote('Load a field image first, then set its scale.'); return; } setHomePick(false); calib = { pts: [] }; $('calibBox').hidden = true; $('calibMsg').textContent = 'Click the first of two points whose true distance you know.'; });
 $('calibApply').addEventListener('click', function(){
   var d = parseFloat($('calibDist').value), m = Math.hypot(calib.pts[1][0] - calib.pts[0][0], calib.pts[1][1] - calib.pts[0][1]);
   if (!(d > 0) || !(m > 0)) return; $('fieldW').value = Math.round(fieldRect.w*d/m*10)/10; calib = null; $('calibBox').hidden = true; $('calibMsg').textContent = ''; geo = null; placeField(); geoNote();
@@ -15,7 +15,7 @@ function placeField(hMeters, keepPlan){
   var tex = new THREE.CanvasTexture(fieldCanvas); tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   fieldPlane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
   fieldPlane.rotation.x = -Math.PI/2; fieldPlane.position.set(0, 0.03, -(h/2 + 6)); scene.add(fieldPlane);
-  fieldRect = { w: w, h: h, cz: -(h/2 + 6) }; fieldMode = true; scenery.visible = false; drillObjs.visible = false;
+  fieldRect = { w: w, h: h, cx: 0, cz: -(h/2 + 6) }; setHomePick(false); fieldMode = true; scenery.visible = false; drillObjs.visible = false;
   scene.fog.near = 400; scene.fog.far = 2200; $('fieldRemove').hidden = false; if (!keepPlan){ poly = []; route = []; } track = []; startDrill('free'); fitView(); computePlan();
 }
 // bounds = {n, s, e, w} in degrees places the image at true scale and sets the home point 6 m south of its south edge
@@ -28,7 +28,7 @@ function useImage(canvas, bounds){
 }
 function removeField(){
   if (fieldPlane){ scene.remove(fieldPlane); fieldPlane = null; } fieldCanvas = null; fieldRect = null; fieldMode = false; scenery.visible = true; drillObjs.visible = true;
-  scene.fog.near = 60; scene.fog.far = 160; $('fieldRemove').hidden = true; $('fieldFile').value = ''; poly = []; route = []; track = []; geo = null; calib = null; fitView(); computePlan(); geoNote();
+  scene.fog.near = 60; scene.fog.far = 160; $('fieldRemove').hidden = true; $('fieldFile').value = ''; poly = []; route = []; track = []; geo = null; calib = null; setHomePick(false); fitView(); computePlan(); geoNote();
 }
 $('fieldW').addEventListener('change', function(){ if (fieldCanvas){ geo = null; placeField(); geoNote(); } });
 $('fieldRemove').addEventListener('click', removeField);

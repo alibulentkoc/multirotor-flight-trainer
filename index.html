@@ -165,8 +165,10 @@ td:last-child,th:last-child{text-align:right}
         <canvas id="map" width="840" height="840" aria-label="Top-down planning map, north up"></canvas>
         <div class="row3"><button id="pgUndo">Undo point</button><button id="pgClear">Clear</button><button id="pgWhole">Whole field</button></div>
         <div class="row3"><button id="pgIn">Zoom in</button><button id="pgOut">Zoom out</button><button id="pgFit">Fit to plan</button></div>
+        <div class="row3" style="grid-template-columns:1fr"><button id="pgHome" aria-pressed="false">Set home</button></div>
+        <p class="note" id="homeMsg" role="status" style="margin:4px 0 0"></p>
         <p class="note" id="planHelp"></p>
-        <p class="note">North is up. H is the home point where you stand. The yellow line is the track actually flown, and green dots are photos taken.</p>
+        <p class="note">North is up. H is the home point where you stand. With your own field loaded, "Set home" followed by a click on the map moves it. The yellow line is the track actually flown, and green dots are photos taken.</p>
         <div id="wpBox" hidden><div class="scroll"><table id="wpTable" class="wpt"></table></div></div>
       </div>
       <div>
@@ -1118,22 +1120,18 @@ function renderPip(el, down){
 }
 
 // ---------- flight planner ----------
-var CAMERAS = [
-  { n: 'Small drone, 12 MP (1/2.3 in)', sw: 6.17, sh: 4.55, f: 4.5, iw: 4000, ih: 3000 },
-  { n: 'Mapping drone, 20 MP (1 in)', sw: 13.2, sh: 8.8, f: 8.8, iw: 5472, ih: 3648 },
-  { n: 'Multispectral, 1.2 MP per band', sw: 4.8, sh: 3.6, f: 5.4, iw: 1280, ih: 960 }
-];
-CAMERAS.forEach(function(c, i){ var o = document.createElement('option'); o.value = i; o.textContent = c.n; $('pCam').appendChild(o); });
-$('pCam').value = 1;
+// fieldRect = { w, h, cx, cz }: size and center of the field image in local meters
 var timeScale = 1, planMode = 'area', poly = [], route = [], plan = null, fieldCanvas = null, fieldPlane = null, fieldRect = null, mapT = 0;
-var geo = null, view2d = { cx: 0, cz: -32, span: 150 }, track = [], calib = null;
+var geo = null, view2d = { cx: 0, cz: -32, span: 150 }, track = [], calib = null, homePick = false;
 var map = $('map'), mx = map.getContext('2d');
 
+// Everything from mkGeo down to geoNote is pure (no DOM, no three.js). test/run.js loads that range headless.
 // --- georeference: flat local tangent plane around the home point (sim origin) ---
 function mkGeo(lat, lon){ var p = lat*Math.PI/180; return { lat0: lat, lon0: lon,
   mLat: 111132.92 - 559.82*Math.cos(2*p) + 1.175*Math.cos(4*p), mLon: 111412.84*Math.cos(p) - 93.5*Math.cos(3*p) }; }
-function ll2xz(lat, lon){ return [(lon - geo.lon0)*geo.mLon, -(lat - geo.lat0)*geo.mLat]; }
-function xz2ll(x, z){ return [geo.lat0 - z/geo.mLat, geo.lon0 + x/geo.mLon]; }
+// g is optional and defaults to the current georeference
+function ll2xz(lat, lon, g){ g = g || geo; return [(lon - g.lon0)*g.mLon, -(lat - g.lat0)*g.mLat]; }
+function xz2ll(x, z, g){ g = g || geo; return [g.lat0 - z/g.mLat, g.lon0 + x/g.mLon]; }
 function utm2ll(E, N, zone, south){
   var a = 6378137, f = 1/298.257223563, k0 = 0.9996, e2 = f*(2 - f), ep2 = e2/(1 - e2), x = E - 500000, y = south ? N - 10000000 : N;
   var mu = y/k0/(a*(1 - e2/4 - 3*e2*e2/64 - 5*e2*e2*e2/256)), e1 = (1 - Math.sqrt(1 - e2))/(1 + Math.sqrt(1 - e2));
@@ -1143,38 +1141,34 @@ function utm2ll(E, N, zone, south){
   var lon = (D - (1 + 2*T1 + C1)*Math.pow(D, 3)/6 + (5 - 2*C1 + 28*T1 - 3*C1*C1 + 8*ep2 + 24*T1*T1)*Math.pow(D, 5)/120)/c;
   return [lat*180/Math.PI, (zone*6 - 183) + lon*180/Math.PI];
 }
-function geoNote(msg){ $('geoStatus').textContent = msg || (geo ? 'Georeferenced. Home point: ' + geo.lat0.toFixed(6) + ', ' + geo.lon0.toFixed(6) + '.' : 'Not georeferenced. Exports use local meters east and north of home.'); }
-
-function w2m(x, z){ var v = view2d; return [(x - v.cx)/v.span*840 + 420, (z - v.cz)/v.span*840 + 420]; }
-function m2w(e){ var r = map.getBoundingClientRect(), v = view2d; return [((e.clientX - r.left)/r.width - 0.5)*v.span + v.cx, ((e.clientY - r.top)/r.height - 0.5)*v.span + v.cz]; }
-function fitView(){
-  var pts = [[0, 0]]; poly.forEach(function(p){ pts.push(p); }); route.forEach(function(p){ pts.push([p.x, p.z]); });
-  if (fieldRect){ pts.push([-fieldRect.w/2, fieldRect.cz - fieldRect.h/2]); pts.push([fieldRect.w/2, fieldRect.cz + fieldRect.h/2]); }
-  if (pts.length === 1){ view2d = { cx: 0, cz: -32, span: 150 }; return; }
-  var x1 = Infinity, x2 = -Infinity, z1 = Infinity, z2 = -Infinity;
-  pts.forEach(function(p){ x1 = Math.min(x1, p[0]); x2 = Math.max(x2, p[0]); z1 = Math.min(z1, p[1]); z2 = Math.max(z2, p[1]); });
-  view2d = { cx: (x1 + x2)/2, cz: (z1 + z2)/2, span: Math.max(60, Math.max(x2 - x1, z2 - z1)*1.15 + 20) };
-}
-function num(id, lo, hi, d){ var v = parseFloat($(id).value); if (isNaN(v)) v = d; return clamp(v, lo, hi); }
-
-function computePlan(){
-  var cam = CAMERAS[+$('pCam').value], alt = num('pAlt', 5, 120, 40), fo = num('pFront', 10, 95, 75)/100, so = num('pSide', 10, 95, 70)/100;
-  var speed = num('pSpeed', 1, 8, 5), dir = num('pDir', 0, 179, 0)*Math.PI/180, endurance = num('pBatt', 5, 45, 20);
-  var W = cam.sw*alt/cam.f, L = cam.sh*alt/cam.f, P = { cam: cam, alt: alt, speed: speed, W: W, L: L, dir: dir, mode: planMode };
+// --- plan computation: pure, so it can be tested headless ---
+var CAMERAS = [
+  { n: 'Small drone, 12 MP (1/2.3 in)', sw: 6.17, sh: 4.55, f: 4.5, iw: 4000, ih: 3000 },
+  { n: 'Mapping drone, 20 MP (1 in)', sw: 13.2, sh: 8.8, f: 8.8, iw: 5472, ih: 3648 },
+  { n: 'Multispectral, 1.2 MP per band', sw: 4.8, sh: 3.6, f: 5.4, iw: 1280, ih: 960 }
+];
+// input limits as [min, max, default]
+var PLAN_LIMITS = { alt: [5, 120, 40], front: [10, 95, 75], side: [10, 95, 70], speed: [1, 8, 5], dir: [0, 179, 0], endurance: [5, 45, 20] };
+// time allowances for the estimate, and pattern limits
+var PLAN_TIMES = { turn: 4, photoHold: 1.5, hoverHold: 5, climbRate: 2.5, descentRate: 0.6, legClimbRate: 2, overhead: 10, minLine: 1, maxLines: 400 };
+// inp = { cam, alt (m), front (%), side (%), speed (m/s), dirDeg, endurance (min), mode: 'area' | 'route', poly: [[x, z]], route: [{ x, z, alt, act }] }
+function planCompute(inp){
+  var cam = inp.cam, alt = inp.alt, fo = inp.front/100, so = inp.side/100, speed = inp.speed, dir = inp.dirDeg*Math.PI/180, poly = inp.poly || [], route = inp.route || [], T = PLAN_TIMES;
+  var W = cam.sw*alt/cam.f, L = cam.sh*alt/cam.f, P = { cam: cam, alt: alt, speed: speed, W: W, L: L, dir: dir, mode: inp.mode };
   P.gsd = cam.sw*alt*100/(cam.f*cam.iw); P.spacing = W*(1 - so); P.trig = L*(1 - fo); P.interval = P.trig/speed;
-  P.lines = []; P.shots = []; P.wps = []; P.area = 0; P.dist = 0; P.time = 0; P.endurance = endurance; P.ok = false;
-  var i, prev = [0, 0];
-  if (planMode === 'route'){
+  P.lines = []; P.shots = []; P.wps = []; P.area = 0; P.dist = 0; P.time = 0; P.endurance = inp.endurance; P.ok = false;
+  var i, prev = [0, 0], holdOf = function(r){ return r.act === 'hover' ? T.hoverHold : (r.act === 'photo' ? T.photoHold : 0); };
+  if (inp.mode === 'route'){
     if (route.length >= 1){
       var climb = 0, hold = 0, lastAlt = route[0].alt;
       P.wps.push({ x: 0, y: route[0].alt, z: 0 });
       route.forEach(function(r){
-        P.wps.push({ x: r.x, y: r.alt, z: r.z, photo: r.act === 'photo', hold: r.act === 'hover' ? 5 : (r.act === 'photo' ? 1.5 : 0) });
-        P.dist += Math.hypot(r.x - prev[0], r.z - prev[1]); prev = [r.x, r.z]; climb += Math.abs(r.alt - lastAlt); lastAlt = r.alt; hold += r.act === 'hover' ? 5 : (r.act === 'photo' ? 1.5 : 0);
+        P.wps.push({ x: r.x, y: r.alt, z: r.z, photo: r.act === 'photo', hold: holdOf(r) });
+        P.dist += Math.hypot(r.x - prev[0], r.z - prev[1]); prev = [r.x, r.z]; climb += Math.abs(r.alt - lastAlt); lastAlt = r.alt; hold += holdOf(r);
         if (r.act === 'photo') P.shots.push([r.x, r.z, 0]);
       });
       P.dist += Math.hypot(prev[0], prev[1]); P.wps.push({ x: 0, y: lastAlt, z: 0 });
-      P.time = P.dist/speed + route.length*4 + hold + climb/2 + route[0].alt/2.5 + lastAlt/0.6 + 10; P.ok = true;
+      P.time = P.dist/speed + route.length*T.turn + hold + climb/T.legClimbRate + route[0].alt/T.climbRate + lastAlt/T.descentRate + T.overhead; P.ok = true;
     }
   } else if (poly.length >= 3){
     // rotate so flight lines run along the local v axis; dir 0 = north-south lines
@@ -1182,12 +1176,12 @@ function computePlan(){
     var minU = Infinity, maxU = -Infinity; loc.forEach(function(p){ minU = Math.min(minU, p[0]); maxU = Math.max(maxU, p[0]); });
     for (i = 0; i < poly.length; i++){ var a = poly[i], b = poly[(i + 1) % poly.length]; P.area += a[0]*b[1] - b[0]*a[1]; } P.area = Math.abs(P.area)/2;
     var nL = Math.max(1, Math.ceil((maxU - minU)/P.spacing)), u0 = (minU + maxU)/2 - (nL - 1)*P.spacing/2, flip = false;
-    for (var k = 0; k < nL && k < 400; k++){
+    for (var k = 0; k < nL && k < T.maxLines; k++){
       var u = u0 + k*P.spacing, hits = [];
       for (i = 0; i < loc.length; i++){ var p1 = loc[i], p2 = loc[(i + 1) % loc.length];
         if ((p1[0] - u)*(p2[0] - u) <= 0 && p1[0] !== p2[0]) hits.push(p1[1] + (u - p1[0])/(p2[0] - p1[0])*(p2[1] - p1[1])); }
       if (hits.length < 2) continue;
-      var v1 = Math.min.apply(null, hits), v2 = Math.max.apply(null, hits); if (v2 - v1 < 1) continue;
+      var v1 = Math.min.apply(null, hits), v2 = Math.max.apply(null, hits); if (v2 - v1 < T.minLine) continue;
       var A = [u*ca - v1*sa, u*sa + v1*ca], B = [u*ca - v2*sa, u*sa + v2*ca];
       P.lines.push(flip ? [A, B] : [B, A]); flip = !flip;
     }
@@ -1202,9 +1196,46 @@ function computePlan(){
       for (var d = 0; d <= len; d += P.trig) P.shots.push([l[0][0] + (l[1][0] - l[0][0])*d/len, l[0][1] + (l[1][1] - l[0][1])*d/len, Math.atan2(-(l[1][0] - l[0][0]), -(l[1][1] - l[0][1]))]);
     });
     P.dist += Math.hypot(prev[0], prev[1]); P.wps.push({ x: 0, y: alt, z: 0 });
-    P.time = P.dist/speed + P.lines.length*2*4 + alt/2.5 + alt/0.6 + 10; P.ok = P.lines.length > 0;
+    P.time = P.dist/speed + P.lines.length*2*T.turn + alt/T.climbRate + alt/T.descentRate + T.overhead; P.ok = P.lines.length > 0;
   }
-  plan = P; renderPlanOut(); renderWpTable(); drawMap();
+  return P;
+}
+// --- movable home: home stays the sim origin, so moving home shifts everything else the other way ---
+// s = { geo, poly, route, track, field: { w, h, cx, cz } | null } in local meters. (hx, hz) is the new home in the old frame.
+// With a georeference, points go through latitude and longitude, so their geographic coordinates do not change.
+// Local meters then rescale very slightly, because the tangent plane is re-anchored: about 11 parts per million per 100 m of
+// north-south move at 35 deg latitude (about 1 mm across a 100 m field). The field image keeps its size, which is well below one pixel.
+function shiftHome(s, hx, hz){
+  var g0 = s.geo, h = g0 ? xz2ll(hx, hz, g0) : null, g1 = g0 ? mkGeo(h[0], h[1]) : null;
+  var mv = function(x, z){ if (!g0) return [x - hx, z - hz]; var l = xz2ll(x, z, g0); return ll2xz(l[0], l[1], g1); };
+  var c = s.field ? mv(s.field.cx, s.field.cz) : null;
+  return { geo: g1,
+    poly: (s.poly || []).map(function(p){ return mv(p[0], p[1]); }),
+    route: (s.route || []).map(function(r){ var q = mv(r.x, r.z); return { x: q[0], z: q[1], alt: r.alt, act: r.act }; }),
+    track: (s.track || []).map(function(p){ return mv(p[0], p[1]); }),
+    field: s.field ? { w: s.field.w, h: s.field.h, cx: c[0], cz: c[1] } : null };
+}
+function geoNote(msg){ $('geoStatus').textContent = msg || (geo ? 'Georeferenced. Home point: ' + geo.lat0.toFixed(6) + ', ' + geo.lon0.toFixed(6) + '.' : 'Not georeferenced. Exports use local meters east and north of home.'); }
+CAMERAS.forEach(function(c, i){ var o = document.createElement('option'); o.value = i; o.textContent = c.n; $('pCam').appendChild(o); });
+$('pCam').value = 1;
+
+function w2m(x, z){ var v = view2d; return [(x - v.cx)/v.span*840 + 420, (z - v.cz)/v.span*840 + 420]; }
+function m2w(e){ var r = map.getBoundingClientRect(), v = view2d; return [((e.clientX - r.left)/r.width - 0.5)*v.span + v.cx, ((e.clientY - r.top)/r.height - 0.5)*v.span + v.cz]; }
+function fitView(){
+  var pts = [[0, 0]]; poly.forEach(function(p){ pts.push(p); }); route.forEach(function(p){ pts.push([p.x, p.z]); });
+  if (fieldRect){ pts.push([fieldRect.cx - fieldRect.w/2, fieldRect.cz - fieldRect.h/2]); pts.push([fieldRect.cx + fieldRect.w/2, fieldRect.cz + fieldRect.h/2]); }
+  if (pts.length === 1){ view2d = { cx: 0, cz: -32, span: 150 }; return; }
+  var x1 = Infinity, x2 = -Infinity, z1 = Infinity, z2 = -Infinity;
+  pts.forEach(function(p){ x1 = Math.min(x1, p[0]); x2 = Math.max(x2, p[0]); z1 = Math.min(z1, p[1]); z2 = Math.max(z2, p[1]); });
+  view2d = { cx: (x1 + x2)/2, cz: (z1 + z2)/2, span: Math.max(60, Math.max(x2 - x1, z2 - z1)*1.15 + 20) };
+}
+function num(id, lo, hi, d){ var v = parseFloat($(id).value); if (isNaN(v)) v = d; return clamp(v, lo, hi); }
+function planNum(id, k){ var l = PLAN_LIMITS[k]; return num(id, l[0], l[1], l[2]); }
+
+function computePlan(){
+  plan = planCompute({ cam: CAMERAS[+$('pCam').value], alt: planNum('pAlt', 'alt'), front: planNum('pFront', 'front'), side: planNum('pSide', 'side'), speed: planNum('pSpeed', 'speed'),
+    dirDeg: planNum('pDir', 'dir'), endurance: planNum('pBatt', 'endurance'), mode: planMode, poly: poly, route: route });
+  renderPlanOut(); renderWpTable(); drawMap();
 }
 function renderPlanOut(){
   var P = plan, rows = [
@@ -1244,7 +1275,7 @@ function drawMap(){
   if ($('plan').hidden || !plan) return;
   var v = view2d, sc = 840/v.span, a;
   mx.fillStyle = '#56733a'; mx.fillRect(0, 0, 840, 840);
-  if (fieldRect){ a = w2m(-fieldRect.w/2, fieldRect.cz - fieldRect.h/2); mx.drawImage(fieldCanvas, a[0], a[1], fieldRect.w*sc, fieldRect.h*sc); }
+  if (fieldRect){ a = w2m(fieldRect.cx - fieldRect.w/2, fieldRect.cz - fieldRect.h/2); mx.drawImage(fieldCanvas, a[0], a[1], fieldRect.w*sc, fieldRect.h*sc); }
   else { mx.fillStyle = '#8a8f8c'; colliders.forEach(function(c){ a = w2m(c.min.x, c.min.z); mx.fillRect(a[0], a[1], (c.max.x - c.min.x)*sc, (c.max.z - c.min.z)*sc); }); }
   if (plan.mode === 'area' && plan.shots.length >= 2 && plan.lines.length){ // overlap illustration
     var ll = function(l){ return Math.hypot(l[1][0] - l[0][0], l[1][1] - l[0][1]); }, n1 = Math.floor(ll(plan.lines[0])/plan.trig) + 1, show = [plan.shots[0], plan.shots[1]];
@@ -1278,7 +1309,7 @@ var drag = null;
 function ptsList(){ return planMode === 'route' ? route.map(function(r){ return [r.x, r.z]; }) : poly; }
 map.addEventListener('pointerdown', function(e){
   var w = m2w(e), r = map.getBoundingClientRect(), tol = 16*view2d.span/r.width, best = -1, bd = tol;
-  if (!calib) ptsList().forEach(function(p, i){ var d = Math.hypot(p[0] - w[0], p[1] - w[1]); if (d < bd){ bd = d; best = i; } });
+  if (!calib && !homePick) ptsList().forEach(function(p, i){ var d = Math.hypot(p[0] - w[0], p[1] - w[1]); if (d < bd){ bd = d; best = i; } });
   drag = { idx: best, x: e.clientX, y: e.clientY, moved: false }; map.setPointerCapture(e.pointerId);
 });
 map.addEventListener('pointermove', function(e){
@@ -1288,16 +1319,42 @@ map.addEventListener('pointermove', function(e){
 map.addEventListener('pointerup', function(e){
   if (!drag) return; var d = drag; drag = null; if (d.moved || d.idx >= 0) return;
   var w = m2w(e);
+  if (homePick){ moveHome(w[0], w[1]); return; }
   if (calib){ if (calib.pts.length < 2) calib.pts.push(w); if (calib.pts.length === 2){ var m = Math.hypot(calib.pts[1][0] - calib.pts[0][0], calib.pts[1][1] - calib.pts[0][1]);
       $('calibBox').hidden = false; $('calibMsg').textContent = 'These points are ' + m.toFixed(1) + ' m apart at the current scale. Enter the true distance:'; } else $('calibMsg').textContent = 'Now click the second point.'; drawMap(); return; }
-  if (planMode === 'route') route.push({ x: w[0], z: w[1], alt: num('pAlt', 5, 120, 40), act: 'none' }); else poly.push(w);
+  if (planMode === 'route') route.push({ x: w[0], z: w[1], alt: planNum('pAlt', 'alt'), act: 'none' }); else poly.push(w);
   computePlan();
 });
+// --- set home: a one-shot map click. Home stays the sim origin, so the field, plan, track, and georeference shift instead (see shiftHome) ---
+function homeBlocked(){
+  var tel = sim.telemetry();
+  if (!fieldMode && !geo) return 'Home is fixed on the practice field. Load a field image or import a plan first.';
+  if (tel.armed || !tel.on_ground) return 'Land and disarm before moving home.';
+  return '';
+}
+function setHomePick(on, msg){
+  homePick = on; $('pgHome').setAttribute('aria-pressed', on ? 'true' : 'false');
+  $('homeMsg').textContent = msg || (on ? 'Click the map where you will stand and take off. Press Esc or the button again to cancel.' : '');
+}
+function moveHome(hx, hz){
+  var why = homeBlocked(); if (why){ setHomePick(false, why); return; }
+  var s = shiftHome({ geo: geo, poly: poly, route: route, track: track, field: fieldRect }, hx, hz);
+  geo = s.geo; poly = s.poly; route = s.route; track = s.track; fieldRect = s.field;
+  if (fieldPlane) fieldPlane.position.set(fieldRect.cx, 0.03, fieldRect.cz);
+  view2d.cx -= hx; view2d.cz -= hz; // keep the map steady under the cursor
+  startDrill(drill.id); setHomePick(false, 'Home moved. The drone now sits at the new home.'); computePlan(); geoNote();
+}
+$('pgHome').addEventListener('click', function(e){
+  e.target.blur(); if (homePick){ setHomePick(false); return; }
+  var why = homeBlocked(); if (why){ setHomePick(false, why); return; }
+  calib = null; $('calibBox').hidden = true; $('calibMsg').textContent = ''; setHomePick(true); drawMap();
+});
+window.addEventListener('keydown', function(e){ if (e.code === 'Escape' && homePick) setHomePick(false); });
 $('pgUndo').addEventListener('click', function(){ if (planMode === 'route') route.pop(); else poly.pop(); computePlan(); });
 $('pgClear').addEventListener('click', function(){ if (planMode === 'route') route = []; else poly = []; track = []; computePlan(); });
 $('pgWhole').addEventListener('click', function(){
-  var R = fieldRect || { w: 60, h: 44, cz: -32 }, x = R.w/2, z1 = R.cz - R.h/2, z2 = R.cz + R.h/2;
-  setPlanMode('area'); poly = [[-x, z1], [x, z1], [x, z2], [-x, z2]]; computePlan();
+  var R = fieldRect || { w: 60, h: 44, cx: 0, cz: -32 }, x1 = R.cx - R.w/2, x2 = R.cx + R.w/2, z1 = R.cz - R.h/2, z2 = R.cz + R.h/2;
+  setPlanMode('area'); poly = [[x1, z1], [x2, z1], [x2, z2], [x1, z2]]; computePlan();
 });
 $('pgIn').addEventListener('click', function(){ view2d.span = Math.max(30, view2d.span/1.4); drawMap(); });
 $('pgOut').addEventListener('click', function(){ view2d.span = Math.min(4000, view2d.span*1.4); drawMap(); });
@@ -1323,7 +1380,7 @@ function planTick(dt){ mapT += dt; if (mapT > 0.2){ mapT = 0;
   drawMap(); } }
 
 // --- scale from two points (for screenshots with no georeference) ---
-$('calibStart').addEventListener('click', function(){ if (!fieldRect){ geoNote('Load a field image first, then set its scale.'); return; } calib = { pts: [] }; $('calibBox').hidden = true; $('calibMsg').textContent = 'Click the first of two points whose true distance you know.'; });
+$('calibStart').addEventListener('click', function(){ if (!fieldRect){ geoNote('Load a field image first, then set its scale.'); return; } setHomePick(false); calib = { pts: [] }; $('calibBox').hidden = true; $('calibMsg').textContent = 'Click the first of two points whose true distance you know.'; });
 $('calibApply').addEventListener('click', function(){
   var d = parseFloat($('calibDist').value), m = Math.hypot(calib.pts[1][0] - calib.pts[0][0], calib.pts[1][1] - calib.pts[0][1]);
   if (!(d > 0) || !(m > 0)) return; $('fieldW').value = Math.round(fieldRect.w*d/m*10)/10; calib = null; $('calibBox').hidden = true; $('calibMsg').textContent = ''; geo = null; placeField(); geoNote();
@@ -1339,7 +1396,7 @@ function placeField(hMeters, keepPlan){
   var tex = new THREE.CanvasTexture(fieldCanvas); tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   fieldPlane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
   fieldPlane.rotation.x = -Math.PI/2; fieldPlane.position.set(0, 0.03, -(h/2 + 6)); scene.add(fieldPlane);
-  fieldRect = { w: w, h: h, cz: -(h/2 + 6) }; fieldMode = true; scenery.visible = false; drillObjs.visible = false;
+  fieldRect = { w: w, h: h, cx: 0, cz: -(h/2 + 6) }; setHomePick(false); fieldMode = true; scenery.visible = false; drillObjs.visible = false;
   scene.fog.near = 400; scene.fog.far = 2200; $('fieldRemove').hidden = false; if (!keepPlan){ poly = []; route = []; } track = []; startDrill('free'); fitView(); computePlan();
 }
 // bounds = {n, s, e, w} in degrees places the image at true scale and sets the home point 6 m south of its south edge
@@ -1352,7 +1409,7 @@ function useImage(canvas, bounds){
 }
 function removeField(){
   if (fieldPlane){ scene.remove(fieldPlane); fieldPlane = null; } fieldCanvas = null; fieldRect = null; fieldMode = false; scenery.visible = true; drillObjs.visible = true;
-  scene.fog.near = 60; scene.fog.far = 160; $('fieldRemove').hidden = true; $('fieldFile').value = ''; poly = []; route = []; track = []; geo = null; calib = null; fitView(); computePlan(); geoNote();
+  scene.fog.near = 60; scene.fog.far = 160; $('fieldRemove').hidden = true; $('fieldFile').value = ''; poly = []; route = []; track = []; geo = null; calib = null; setHomePick(false); fitView(); computePlan(); geoNote();
 }
 $('fieldW').addEventListener('change', function(){ if (fieldCanvas){ geo = null; placeField(); geoNote(); } });
 $('fieldRemove').addEventListener('click', removeField);
@@ -1412,7 +1469,7 @@ function applyVectors(vec){ // vec coordinates are lat/lon; make sure a home poi
   if (!geo){ var src = vec.route && vec.route.length ? vec.route : vec.poly;
     if (vec.route && vec.route.length){ var g0 = mkGeo(src[0].lat, src[0].lon); geo = mkGeo(src[0].lat - 5/g0.mLat, src[0].lon); }
     else { var s = Infinity, lo = 0; src.forEach(function(c){ s = Math.min(s, c.lat); lo += c.lon/src.length; }); var g1 = mkGeo(s, lo); geo = mkGeo(s - 6/g1.mLat, lo); } }
-  var defAlt = num('pAlt', 5, 120, 40);
+  var defAlt = planNum('pAlt', 'alt');
   if (vec.poly && vec.poly.length >= 3){ var pp = vec.poly.map(function(c){ return ll2xz(c.lat, c.lon); }); var a = pp[0], b = pp[pp.length - 1]; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 0.01) pp.pop(); poly = pp; setPlanMode('area'); }
   if (vec.route && vec.route.length){ route = vec.route.slice(0, 200).map(function(c){ var q = ll2xz(c.lat, c.lon); return { x: q[0], z: q[1], alt: c.alt > 1 ? clamp(Math.round(c.alt), 2, 120) : defAlt, act: 'none' }; }); if (!vec.poly) setPlanMode('route'); }
 }
