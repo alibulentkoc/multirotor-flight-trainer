@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multirotor Flight Trainer: Labs</title>
+<link rel="preload" href="fonts/LM-regular.woff2" as="font" type="font/woff2" crossorigin>
+<style>@font-face{font-family:"Latin Modern";font-style:normal;font-weight:400;font-display:swap;src:url("fonts/LM-regular.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:italic;font-weight:400;font-display:swap;src:url("fonts/LM-italic.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:normal;font-weight:700;font-display:swap;src:url("fonts/LM-bold.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:italic;font-weight:700;font-display:swap;src:url("fonts/LM-bold-italic.woff2") format("woff2")}
+:root{--bg:#f4f3ef;--paper:#fffffc;--ink:#111111;--muted:#555555;--line:#111111;--soft:#cfcdc6;--accent:#8a2b06;--chip:#f1efe8;--ok:#1d5e3c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15171a;--paper:#1c1f23;--ink:#e9e6df;--muted:#a9a59b;--line:#e9e6df;--soft:#3a3e44;--accent:#f0a27c;--chip:#24282d;--ok:#7fcfa4}}
+:root[data-theme="dark"]{--bg:#15171a;--paper:#1c1f23;--ink:#e9e6df;--muted:#a9a59b;--line:#e9e6df;--soft:#3a3e44;--accent:#f0a27c;--chip:#24282d;--ok:#7fcfa4}
+*{box-sizing:border-box}
+html{font-size:20px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Latin Modern","Latin Modern Roman","CMU Serif","Computer Modern Serif",Georgia,"Times New Roman",serif;line-height:1.45;
+  text-rendering:optimizeLegibility;font-kerning:normal;font-variant-ligatures:common-ligatures}
+.top{max-width:720px;margin:0 auto;padding:14px 8px 0;display:flex;gap:16px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;font-size:.85rem}
+.top a{color:var(--ink);text-decoration:none}
+.top .brand{font-variant:small-caps;letter-spacing:.04em}
+.btn{border:1px solid var(--ink);padding:4px 14px;font-weight:700}
+.btn:hover{background:var(--ink);color:var(--paper) !important}
+main{max-width:720px;margin:14px auto 40px;background:var(--paper);border:1px solid var(--soft);padding:52px 64px 48px}
+h1{font-size:1.72rem;font-weight:400;line-height:1.2;text-align:center;margin:0 0 .35rem}
+.level{text-align:center;font-style:italic;color:var(--muted);margin-bottom:1.6rem}
+h2{font-size:1.25rem;font-weight:700;margin:2rem 0 .5rem}
+p{margin:.9rem 0 .3rem;text-align:justify;hyphens:auto}
+ol,ul{margin:.25rem 0 .9rem;padding-left:1.7rem} li{margin:.28rem 0;text-align:left}
+strong{font-weight:700}
+hr{border:0;border-top:1px solid var(--soft);margin:1.5rem 0}
+a{color:var(--accent)}
+pre{background:var(--chip);border:1px solid var(--soft);padding:10px 14px;overflow-x:auto;font:.72rem/1.5 "Latin Modern Mono","CMU Typewriter Text","Courier New",monospace}
+.scroll{overflow-x:auto}
+/* booktabs-style tables: heavy top and bottom rules, light mid rule, no vertical lines */
+table{border-collapse:collapse;margin:.9rem auto;font-size:.92rem;border-top:2px solid var(--line);border-bottom:2px solid var(--line)}
+th,td{padding:.32rem .9rem;text-align:left;vertical-align:middle;border:0}
+thead th{border-bottom:1px solid var(--line);font-weight:700}
+tbody tr:first-child td{padding-top:.45rem}
+td:empty{min-width:3.4rem;height:2rem;border-bottom:1px dotted var(--muted)}
+.calm{border-left:3px solid var(--ink);padding:.1rem 0 .1rem 1rem;margin:1rem 0;font-style:italic;color:var(--muted)}
+.calm ul{margin:0;padding-left:1.1rem;list-style:none} .calm li{margin:.15rem 0} .calm strong{font-style:normal;color:var(--ink)}
+details.keys{margin:1rem 0} details.keys summary{cursor:pointer;font-variant:small-caps;letter-spacing:.03em;color:var(--muted)}
+nav.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:.4rem;font-size:.9rem;font-style:italic}
+input[type=checkbox]{width:1.05rem;height:1.05rem;accent-color:var(--ok);vertical-align:middle}
+input.score{width:3.6rem;font:inherit;padding:1px 6px;border:0;border-bottom:1px solid var(--muted);background:transparent;color:var(--ink);text-align:center}
+.done-row td{color:var(--muted)} .done-row a{color:var(--muted)}
+.note{color:var(--muted);font-size:.85rem;font-style:italic;text-align:center}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:760px){html{font-size:18px} main{margin:10px 0 0;border-left:0;border-right:0;padding:30px 22px} p{text-align:left}}
+@media print{.top,nav.foot,details.keys{display:none} html{font-size:11pt} body{background:#fff} main{border:0;margin:0;max-width:none;padding:0} .labpage{page-break-after:always}}
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="index.html">Multirotor Flight Trainer: Labs</a><a class="btn" href="../../index.html" target="_blank" rel="noopener">Open the trainer</a></div>
+<main>
+<h1>Multirotor Flight Trainer: Labs</h1>
+<div class="level">Thirty labs in three levels</div>
+<p>Thirty short labs in three levels. Every lab is its own page and repeats its own start steps, so you can do them in any order. Within a level, the order shown is the easiest path.</p>
+<p>Trainer address: https://alibulentkoc.github.io/multirotor-flight-trainer/</p>
+<div class="calm"><ul>
+<li>You cannot break anything. This is a simulator. Crashing costs nothing.</li>
+<li>If anything goes wrong, press <strong>R</strong>. The drone returns to the start, good as new.</li>
+<li>There is no time limit. Repeat a lab as often as you like. Only your best try counts.</li>
+</ul></div>
+<h2>Level 1. Getting started (10 to 20 minutes each)</h2>
+<p>The drone helps you with everything. You learn the controls, the sensors, and the flight planner.</p>
+<div class="scroll"><table>
+<thead>
+<tr>
+<th>Done</th>
+<th>Lab</th>
+<th>Best score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><input type="checkbox" data-lab="1" aria-label="Lab 1 done"></td>
+<td><a href="lab-01-your-first-flight.html">Lab 1. Your first flight</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="1" aria-label="Best score for lab 1"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="2" aria-label="Lab 2 done"></td>
+<td><a href="lab-02-hover-in-the-box.html">Lab 2. Hover in the box</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="2" aria-label="Best score for lab 2"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="3" aria-label="Lab 3 done"></td>
+<td><a href="lab-03-which-way-is-it-pointing.html">Lab 3. Which way is it pointing?</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="3" aria-label="Best score for lab 3"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="4" aria-label="Lab 4 done"></td>
+<td><a href="lab-04-fly-a-square.html">Lab 4. Fly a square</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="4" aria-label="Best score for lab 4"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="5" aria-label="Lab 5 done"></td>
+<td><a href="lab-05-land-on-the-target.html">Lab 5. Land on the target</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="5" aria-label="Best score for lab 5"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="6" aria-label="Lab 6 done"></td>
+<td><a href="lab-06-flying-with-less-help.html">Lab 6. Flying with less help</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="6" aria-label="Best score for lab 6"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="7" aria-label="Lab 7 done"></td>
+<td><a href="lab-07-flying-in-wind.html">Lab 7. Flying in wind</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="7" aria-label="Best score for lab 7"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="8" aria-label="Lab 8 done"></td>
+<td><a href="lab-08-sensors-and-obstacles.html">Lab 8. Sensors and obstacles</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="8" aria-label="Best score for lab 8"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="9" aria-label="Lab 9 done"></td>
+<td><a href="lab-09-plan-a-survey-flight.html">Lab 9. Plan a survey flight</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="9" aria-label="Best score for lab 9"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="10" aria-label="Lab 10 done"></td>
+<td><a href="lab-10-plan-a-flight-over-your-own-field.html">Lab 10. Plan a flight over your own field</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="10" aria-label="Best score for lab 10"></td>
+</tr>
+</tbody>
+</table></div>
+<h2>Level 2. Less help (15 to 25 minutes each)</h2>
+<p>Each lab takes away one kind of help, or asks for one measurement or decision. You will crash sometimes. That is expected.</p>
+<div class="scroll"><table>
+<thead>
+<tr>
+<th>Done</th>
+<th>Lab</th>
+<th>Best score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><input type="checkbox" data-lab="11" aria-label="Lab 11 done"></td>
+<td><a href="lab-11-you-are-the-brakes.html">Lab 11. You are the brakes</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="11" aria-label="Best score for lab 11"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="12" aria-label="Lab 12 done"></td>
+<td><a href="lab-12-hover-by-hand.html">Lab 12. Hover by hand</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="12" aria-label="Best score for lab 12"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="13" aria-label="Lab 13 done"></td>
+<td><a href="lab-13-fly-nose-first.html">Lab 13. Fly nose-first</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="13" aria-label="Best score for lab 13"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="14" aria-label="Lab 14 done"></td>
+<td><a href="lab-14-a-real-landing.html">Lab 14. A real landing</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="14" aria-label="Best score for lab 14"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="15" aria-label="Lab 15 done"></td>
+<td><a href="lab-15-hold-against-the-wind.html">Lab 15. Hold against the wind</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="15" aria-label="Best score for lab 15"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="16" aria-label="Lab 16 done"></td>
+<td><a href="lab-16-through-the-gate.html">Lab 16. Through the gate</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="16" aria-label="Best score for lab 16"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="17" aria-label="Lab 17 done"></td>
+<td><a href="lab-17-measure-the-wind-at-height.html">Lab 17. Measure the wind at height</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="17" aria-label="Best score for lab 17"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="18" aria-label="Lab 18 done"></td>
+<td><a href="lab-18-hit-a-target-image-quality.html">Lab 18. Hit a target image quality</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="18" aria-label="Best score for lab 18"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="19" aria-label="Lab 19 done"></td>
+<td><a href="lab-19-with-the-wind-or-across-it.html">Lab 19. With the wind or across it</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="19" aria-label="Best score for lab 19"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="20" aria-label="Lab 20 done"></td>
+<td><a href="lab-20-inspect-the-barn.html">Lab 20. Inspect the barn</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="20" aria-label="Best score for lab 20"></td>
+</tr>
+</tbody>
+</table></div>
+<h2>Level 3. On your own (20 to 40 minutes each)</h2>
+<p>You fly by hand in wind and design complete missions. Expect many tries. Every skill here was practiced in an earlier lab.</p>
+<div class="scroll"><table>
+<thead>
+<tr>
+<th>Done</th>
+<th>Lab</th>
+<th>Best score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><input type="checkbox" data-lab="21" aria-label="Lab 21 done"></td>
+<td><a href="lab-21-nose-in-by-hand.html">Lab 21. Nose-in, by hand</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="21" aria-label="Best score for lab 21"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="22" aria-label="Lab 22 done"></td>
+<td><a href="lab-22-the-square-by-hand-in-wind.html">Lab 22. The square, by hand, in wind</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="22" aria-label="Best score for lab 22"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="23" aria-label="Lab 23 done"></td>
+<td><a href="lab-23-crosswind-landing-no-assist.html">Lab 23. Crosswind landing, no assist</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="23" aria-label="Best score for lab 23"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="24" aria-label="Lab 24 done"></td>
+<td><a href="lab-24-figure-eight.html">Lab 24. Figure eight</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="24" aria-label="Best score for lab 24"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="25" aria-label="Lab 25 done"></td>
+<td><a href="lab-25-the-gate-by-hand.html">Lab 25. The gate, by hand</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="25" aria-label="Best score for lab 25"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="26" aria-label="Lab 26 done"></td>
+<td><a href="lab-26-running-out-of-battery.html">Lab 26. Running out of battery</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="26" aria-label="Best score for lab 26"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="27" aria-label="Lab 27 done"></td>
+<td><a href="lab-27-light-sun-and-cloud.html">Lab 27. Light, sun, and cloud</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="27" aria-label="Best score for lab 27"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="28" aria-label="Lab 28 done"></td>
+<td><a href="lab-28-a-field-from-a-screenshot.html">Lab 28. A field from a screenshot</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="28" aria-label="Best score for lab 28"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="29" aria-label="Lab 29 done"></td>
+<td><a href="lab-29-design-a-mission-to-a-brief.html">Lab 29. Design a mission to a brief</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="29" aria-label="Best score for lab 29"></td>
+</tr>
+<tr>
+<td><input type="checkbox" data-lab="30" aria-label="Lab 30 done"></td>
+<td><a href="lab-30-checkride.html">Lab 30. Checkride</a></td>
+<td><input class="score" type="text" inputmode="numeric" data-score="30" aria-label="Best score for lab 30"></td>
+</tr>
+</tbody>
+</table></div>
+<p>A single-page version of all 30 labs, for printing, is <a href="all.html">here</a>.</p><p class="note">Your ticks and scores are saved in this browser only. Nothing is sent anywhere.</p>
+</main>
+<script>
+(function(){
+  var KEY='mft.labs.v1', st={};
+  try { st = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e){ st = {}; }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e){} }
+  document.querySelectorAll('input[data-lab]').forEach(function(c){
+    var k='d'+c.dataset.lab; c.checked=!!st[k]; c.closest('tr').classList.toggle('done-row', c.checked);
+    c.addEventListener('change', function(){ st[k]=c.checked; c.closest('tr').classList.toggle('done-row', c.checked); save(); });
+  });
+  document.querySelectorAll('input[data-score]').forEach(function(s){
+    var k='s'+s.dataset.score; s.value=st[k]||''; s.addEventListener('input', function(){ st[k]=s.value; save(); });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+Latin Modern fonts (LM-regular, LM-italic, LM-bold, LM-bold-italic), web format.
+
+Latin Modern is derived from Donald Knuth's Computer Modern and is maintained by
+GUST, the Polish TeX Users Group. It is distributed under the GUST Font License,
+which permits free use and redistribution.
+https://www.gust.org.pl/projects/e-foundry/latin-modern
+
+These woff2 files were taken from the latex.css project (MIT License).
+https://github.com/vincentdoerig/latex-css
