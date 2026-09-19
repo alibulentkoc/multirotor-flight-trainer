@@ -5,6 +5,15 @@ $('calibApply').addEventListener('click', function(){
   if (!(d > 0) || !(m > 0)) return; $('fieldW').value = Math.round(fieldRect.w*d/m*10)/10; calib = null; $('calibBox').hidden = true; $('calibMsg').textContent = ''; geo = null; placeField(); geoNote();
 });
 
+// --- practice field or user field: fieldMode is never set by hand. It is always re-derived from the pure userFieldActive (70-planner.js) ---
+// fieldMode switches off the practice colliders, range sensor targets, drills, and clover reading (61-sensors.js, 30-drills.js, 50-ui.js).
+// The scenery, drill markers, and fog follow it here. Returns true when the mode changed, so the caller can reset the drone.
+var FOG = { practice: [60, 160], userField: [400, 2200] }; // [near, far] in meters
+function syncFieldMode(){
+  var on = userFieldActive(fieldState()), changed = on !== fieldMode, fog = on ? FOG.userField : FOG.practice;
+  fieldMode = on; scenery.visible = !on; drillObjs.visible = !on; scene.fog.near = fog[0]; scene.fog.far = fog[1];
+  return changed;
+}
 // --- field image: becomes the ground north of the home point and the map background ---
 function imgToCanvas(img){ var k = Math.min(1, 4096/Math.max(img.width, img.height)), c = document.createElement('canvas');
   c.width = Math.round(img.width*k); c.height = Math.round(img.height*k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); return c; }
@@ -15,8 +24,8 @@ function placeField(hMeters, keepPlan){
   var tex = new THREE.CanvasTexture(fieldCanvas); tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   fieldPlane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
   fieldPlane.rotation.x = -Math.PI/2; fieldPlane.position.set(0, 0.03, -(h/2 + 6)); scene.add(fieldPlane);
-  fieldRect = { w: w, h: h, cx: 0, cz: -(h/2 + 6) }; setHomePick(false); fieldMode = true; scenery.visible = false; drillObjs.visible = false;
-  scene.fog.near = 400; scene.fog.far = 2200; $('fieldRemove').hidden = false; if (!keepPlan){ poly = []; route = []; } track = []; startDrill('free'); fitView(); computePlan();
+  fieldRect = { w: w, h: h, cx: 0, cz: -(h/2 + 6) }; setHomePick(false); syncFieldMode();
+  $('fieldRemove').hidden = false; if (!keepPlan){ poly = []; route = []; } track = []; startDrill('free'); fitView(); computePlan();
 }
 // bounds = {n, s, e, w} in degrees places the image at true scale and sets the home point 6 m south of its south edge
 function useImage(canvas, bounds){
@@ -27,8 +36,8 @@ function useImage(canvas, bounds){
   geoNote();
 }
 function removeField(){
-  if (fieldPlane){ scene.remove(fieldPlane); fieldPlane = null; } fieldCanvas = null; fieldRect = null; fieldMode = false; scenery.visible = true; drillObjs.visible = true;
-  scene.fog.near = 60; scene.fog.far = 160; $('fieldRemove').hidden = true; $('fieldFile').value = ''; poly = []; route = []; track = []; geo = null; calib = null; setHomePick(false); fitView(); computePlan(); geoNote();
+  if (fieldPlane){ scene.remove(fieldPlane); fieldPlane = null; } fieldCanvas = null; fieldRect = null;
+  $('fieldRemove').hidden = true; $('fieldFile').value = ''; poly = []; route = []; track = []; geo = null; calib = null; setHomePick(false); fitView(); computePlan(); geoNote();
 }
 $('fieldW').addEventListener('change', function(){ if (fieldCanvas){ geo = null; placeField(); geoNote(); } });
 $('fieldRemove').addEventListener('click', removeField);

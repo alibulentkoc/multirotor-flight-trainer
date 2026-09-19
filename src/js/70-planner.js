@@ -103,16 +103,23 @@ var HOME_MSG = {
   flying: 'Land and disarm before moving home.',
   moved: 'Home moved. The drone now sits at the new home.'
 };
-// Home can move only on the user's own field: a loaded field image, or an imported (georeferenced) plan.
-function homeAvailable(st){ return !!(st.hasField || st.hasGeo); }
+// The one decision for "is the user's own field active?": a loaded field image, or an imported (georeferenced) plan, with or without an image.
+// st = { hasField, hasGeo }. While true, the practice scenery and drills are hidden, their colliders and range sensor targets are off, and home can move.
+// Every caller goes through this function (see fieldState and syncFieldMode), so these can never disagree.
+function userFieldActive(st){ return !!(st.hasField || st.hasGeo); }
+// "Clear" on a plan that has no field image: once no corner or waypoint is left, the georeference goes too, which restores the practice field.
+// st = { hasField, points }, where points counts the corners and waypoints left in both modes.
+function clearDropsGeo(st){ return !st.hasField && !st.points; }
+// Home can move only on the user's own field.
+function homeAvailable(st){ return userFieldActive(st); }
 function homeDecision(st){
   if (st.picking) return { action: 'cancel', msg: HOME_MSG.cancel };
   if (!homeAvailable(st)) return { action: 'refuse', msg: HOME_MSG.practice };
   if (st.armed || !st.onGround) return { action: 'refuse', msg: HOME_MSG.flying };
   return { action: 'arm', msg: HOME_MSG.arm };
 }
-// geoNote runs after every change of field image or georeference, so it also refreshes the "Set home" button
-function geoNote(msg){ $('geoStatus').textContent = msg || (geo ? 'Georeferenced. Home point: ' + geo.lat0.toFixed(6) + ', ' + geo.lon0.toFixed(6) + '.' : 'Not georeferenced. Exports use local meters east and north of home.'); refreshHome(); }
+// geoNote runs after every change of field image or georeference, so it also re-derives fieldMode and refreshes the "Set home" button
+function geoNote(msg){ if (syncFieldMode()) startDrill('free'); $('geoStatus').textContent = msg || (geo ? 'Georeferenced. Home point: ' + geo.lat0.toFixed(6) + ', ' + geo.lon0.toFixed(6) + '.' : 'Not georeferenced. Exports use local meters east and north of home.'); refreshHome(); }
 CAMERAS.forEach(function(c, i){ var o = document.createElement('option'); o.value = i; o.textContent = c.n; $('pCam').appendChild(o); });
 $('pCam').value = 1;
 
@@ -173,7 +180,7 @@ function drawMap(){
   var v = view2d, sc = 840/v.span, a;
   mx.fillStyle = '#56733a'; mx.fillRect(0, 0, 840, 840);
   if (fieldRect){ a = w2m(fieldRect.cx - fieldRect.w/2, fieldRect.cz - fieldRect.h/2); mx.drawImage(fieldCanvas, a[0], a[1], fieldRect.w*sc, fieldRect.h*sc); }
-  else { mx.fillStyle = '#8a8f8c'; colliders.forEach(function(c){ a = w2m(c.min.x, c.min.z); mx.fillRect(a[0], a[1], (c.max.x - c.min.x)*sc, (c.max.z - c.min.z)*sc); }); }
+  else if (!fieldMode){ mx.fillStyle = '#8a8f8c'; colliders.forEach(function(c){ a = w2m(c.min.x, c.min.z); mx.fillRect(a[0], a[1], (c.max.x - c.min.x)*sc, (c.max.z - c.min.z)*sc); }); }
   if (plan.mode === 'area' && plan.shots.length >= 2 && plan.lines.length){ // overlap illustration
     var ll = function(l){ return Math.hypot(l[1][0] - l[0][0], l[1][1] - l[0][1]); }, n1 = Math.floor(ll(plan.lines[0])/plan.trig) + 1, show = [plan.shots[0], plan.shots[1]];
     if (plan.lines.length > 1) show.push(plan.shots[n1 + Math.floor(ll(plan.lines[1])/plan.trig)]);
@@ -225,15 +232,16 @@ map.addEventListener('pointerup', function(e){
 });
 // --- set home: a one-shot map click. Home stays the sim origin, so the field, plan, track, and georeference shift instead (see shiftHome) ---
 // The decision itself is the pure homeDecision above. A press or click always ends in a visible message, even if something throws.
-function homeState(picking){ var tel = sim.telemetry(); return { picking: picking, hasField: fieldMode, hasGeo: !!geo, armed: tel.armed, onGround: tel.on_ground }; }
+function fieldState(){ return { hasField: !!fieldCanvas, hasGeo: !!geo }; }
+function homeState(picking){ var tel = sim.telemetry(), fs = fieldState(); return { picking: picking, hasField: fs.hasField, hasGeo: fs.hasGeo, armed: tel.armed, onGround: tel.on_ground }; }
 // While home cannot move (practice field), the button looks disabled and the reason stays in the note. A press still answers, in red.
 function setHomePick(on, msg, warn){
-  var ok = homeAvailable({ hasField: fieldMode, hasGeo: !!geo });
+  var ok = homeAvailable(fieldState());
   homePick = on; $('pgHome').setAttribute('aria-pressed', on ? 'true' : 'false'); $('pgHome').setAttribute('aria-disabled', ok ? 'false' : 'true'); map.style.cursor = on ? 'cell' : '';
   $('homeMsg').textContent = msg || (ok ? '' : HOME_MSG.practice); $('homeMsg').className = warn ? 'note warn' : 'note';
 }
 function refreshHome(){
-  var ok = homeAvailable({ hasField: fieldMode, hasGeo: !!geo }), stale = $('homeMsg').textContent === HOME_MSG.practice;
+  var ok = homeAvailable(fieldState()), stale = $('homeMsg').textContent === HOME_MSG.practice;
   if (!ok) setHomePick(false); else if (stale) setHomePick(homePick); else $('pgHome').setAttribute('aria-disabled', 'false');
 }
 function homeFail(err){ setHomePick(false, 'Set home failed: ' + (err && err.message ? err.message : err) + '. Please report this message.', true); }
@@ -256,7 +264,11 @@ $('pgHome').addEventListener('click', function(){
 });
 window.addEventListener('keydown', function(e){ if (e.code === 'Escape' && homePick){ setHomePick(false, HOME_MSG.cancel); drawMap(); } });
 $('pgUndo').addEventListener('click', function(){ if (planMode === 'route') route.pop(); else poly.pop(); computePlan(); });
-$('pgClear').addEventListener('click', function(){ if (planMode === 'route') route = []; else poly = []; track = []; computePlan(); });
+$('pgClear').addEventListener('click', function(){
+  if (planMode === 'route') route = []; else poly = []; track = [];
+  if (geo && clearDropsGeo({ hasField: !!fieldCanvas, points: poly.length + route.length })){ geo = null; setHomePick(false); fitView(); computePlan(); geoNote(); return; }
+  computePlan();
+});
 $('pgWhole').addEventListener('click', function(){
   var R = fieldRect || { w: 60, h: 44, cx: 0, cz: -32 }, x1 = R.cx - R.w/2, x2 = R.cx + R.w/2, z1 = R.cz - R.h/2, z2 = R.cz + R.h/2;
   setPlanMode('area'); poly = [[x1, z1], [x2, z1], [x2, z2], [x1, z2]]; computePlan();

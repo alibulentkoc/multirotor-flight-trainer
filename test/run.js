@@ -83,6 +83,19 @@ test('set home: a second press cancels, whatever the aircraft state', function()
 test('set home: every outcome has a message, so a press is never silent', function(){
   [true, false].forEach(function(p){ [true, false].forEach(function(f){ [true, false].forEach(function(g){ [true, false].forEach(function(a){ [true, false].forEach(function(og){
     var d = G.homeDecision({ picking: p, hasField: f, hasGeo: g, armed: a, onGround: og }); assert(['arm', 'cancel', 'refuse'].indexOf(d.action) >= 0); assert(typeof d.msg === 'string' && d.msg.length > 10, JSON.stringify(d)); }); }); }); }); }); });
+test('user field: active with a field image, or with an imported plan and no image', function(){
+  assert.strictEqual(G.userFieldActive({ hasField: false, hasGeo: false }), false); assert.strictEqual(G.userFieldActive({ hasField: true, hasGeo: false }), true);
+  assert.strictEqual(G.userFieldActive({ hasField: false, hasGeo: true }), true); assert.strictEqual(G.userFieldActive({ hasField: true, hasGeo: true }), true); });
+test('user field: "Set home" is available exactly when the practice scenery is off', function(){
+  [true, false].forEach(function(f){ [true, false].forEach(function(g){ var st = { hasField: f, hasGeo: g }; assert.strictEqual(G.homeAvailable(st), G.userFieldActive(st)); }); }); });
+test('user field: clearing the last point of an image-less plan drops the georeference (back to the practice field)', function(){
+  assert.strictEqual(G.clearDropsGeo({ hasField: false, points: 0 }), true); assert.strictEqual(G.clearDropsGeo({ hasField: false, points: 4 }), false);
+  assert.strictEqual(G.clearDropsGeo({ hasField: true, points: 0 }), false); assert.strictEqual(G.clearDropsGeo({ hasField: true, points: 4 }), false);
+  assert.strictEqual(G.userFieldActive({ hasField: false, hasGeo: !G.clearDropsGeo({ hasField: false, points: 0 }) }), false); });
+test('user field: fieldMode is assigned in one place only, from userFieldActive', function(){
+  var all = fs.readdirSync(path.join(__dirname, '../src/js')).map(function(f){ return src(f); }).join('\n'), sets = all.match(/fieldMode\s*=(?!=)\s*[^;,]+/g) || [];
+  assert.deepStrictEqual(sets.filter(function(s){ return !/^fieldMode\s*=\s*false$/.test(s); }), ['fieldMode = on'], JSON.stringify(sets));
+  assert(/var on = userFieldActive\(fieldState\(\)\)/.test(all)); assert.strictEqual((all.match(/\.hasField \|\| /g) || []).length, 1, 'the image-or-georeference rule must live only in userFieldActive'); });
 
 // ---- build ----
 console.log('build');

@@ -246,7 +246,7 @@ Open it with the "Open flight plan" button or the P key. It floats over the 3D v
 |---|---|
 | Survey area / Waypoint route | Choose the planning mode |
 | Undo point | Remove the last corner or waypoint |
-| Clear | Remove all corners or waypoints in the current mode, and the flown track |
+| Clear | Remove all corners or waypoints in the current mode, and the flown track. On an imported plan with no field image, clearing the last point also returns to the practice field. See section 15 |
 | Whole field | Make the survey area cover the whole loaded image |
 | Zoom in / Zoom out | Change the map scale |
 | Fit to plan | Frame the home point, image, and plan |
@@ -346,7 +346,19 @@ Up to 200 waypoints are kept from an imported file.
 
 Use the file picker at the top right of the flight plan window. You can also drop files onto the 3D view. An image copied to the clipboard can be pasted with Ctrl+V.
 
-When an image is loaded, it becomes the ground north of the home point and the map background. The practice obstacles and drills are hidden. "Remove field image" restores the practice field.
+When an image is loaded, it becomes the ground north of the home point and the map background.
+
+**Your own field replaces the practice field.** As soon as you load a field image or import a plan, even a plan with no image (KML, GeoJSON, or CSV only), you are on your own field:
+
+- The practice scenery (barn, bales, tree, gate, tree line, corner flags, and grid) and the drills are hidden, in the 3D view and on the map.
+- The hidden obstacles cannot be hit, and the range sensors and obstacle avoidance no longer see them. Range down reads the ground only. The clover reading shows "n/a".
+- The view reaches much farther, and the "Too far away" warning moves out from 45 m to 500 m.
+- The drone is reset to the home pad, and the drill is set to free flight.
+
+To get the practice field back:
+
+- With a field image: press "Remove field image". This also removes the plan.
+- With an imported plan and no image: press "Clear" until no corner and no waypoint is left in either mode. The georeference is dropped, the scenery, obstacles, and drills return, and the drone is reset to the home pad.
 
 | What you have | What to select | Result |
 |---|---|---|
@@ -371,7 +383,7 @@ You can select several files at once, for example an image, its world file, and 
 **The home point: fixed on the practice field, movable on your own field.**
 
 - On the built-in practice field, home is fixed at the orange pad. The barn, bales, tree, gate, and drills are all laid out around it. The "Set home" button is greyed out, and the note under it says why.
-- On your own field, home is movable. As soon as you load a field image or import a plan (KML, KMZ, GeoJSON, CSV, or GeoTIFF), the "Set home" button becomes active. "Remove field image" returns to the practice field, and the button greys out again.
+- On your own field, home is movable. As soon as you load a field image or import a plan (KML, KMZ, GeoJSON, CSV, or GeoTIFF), the "Set home" button becomes active. "Remove field image", or "Clear" on a plan that has no image, returns to the practice field, and the button greys out again.
 
 **Where home goes.** On your own field, home is first set automatically:
 

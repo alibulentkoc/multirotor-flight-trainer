@@ -69,8 +69,18 @@ Home is the sim origin, the pilot stands at (0, 1.6, 7), and return-to-home, the
 - The map view center shifts by the same offset, so the map does not jump under the cursor.
 - The aircraft is reset through `startDrill`, the same path the R key uses. That also clears `sim.photos`, so photo marks do not survive a home move. The flown track does, because the app owns it.
 - The arm, cancel, or refuse decision is the pure `homeDecision(st)` in the tested range, with its texts in `HOME_MSG`. Every outcome carries a message, and the button and map-click handlers catch exceptions and show them in the note, so a press can never do nothing silently.
-- `homeAvailable(st)` (field image or georeference) drives the button's look. When it is false the button carries `aria-disabled="true"` (greyed out by CSS) and the reason stays in the note. It is not a real `disabled` attribute, so a press still answers with the red refusal. `geoNote()` calls `refreshHome()`, because every change of field image or georeference already ends in `geoNote()`.
+- `homeAvailable(st)` (a thin wrapper around `userFieldActive`, see Practice field or user field) drives the button's look. When it is false the button carries `aria-disabled="true"` (greyed out by CSS) and the reason stays in the note. It is not a real `disabled` attribute, so a press still answers with the red refusal. `geoNote()` calls `refreshHome()`, because every change of field image or georeference already ends in `geoNote()`.
 - Moving home is refused while armed or airborne (read from `telemetry()`), and on the built-in practice field, where the scenery, colliders, drills, and forage truth layer are fixed around the origin. It is allowed when a field image is loaded or a georeference exists.
+
+## Practice field or user field
+
+One pure function in the tested range of `70-planner.js` decides which field is active: `userFieldActive({ hasField, hasGeo })`, true with a loaded field image or with a georeference (an imported plan, with or without an image). Nothing else may repeat that rule.
+
+- `fieldState()` reads the two inputs (`!!fieldCanvas`, `!!geo`). `syncFieldMode()` in `71-field-image.js` is the only place that assigns `fieldMode`. It also sets `scenery.visible`, `drillObjs.visible`, and the fog range (named block `FOG`), and returns true when the mode changed.
+- `fieldMode` is the cached result that the per-frame code reads: colliders and range sensor targets (`61-sensors.js`), the drill lock (`30-drills.js`), the "Too far away" radius (`50-ui.js`), and the collider boxes on the map (`drawMap`).
+- `geoNote()` calls `syncFieldMode()` and resets the drone through `startDrill('free')` on a change, because every change of field image or georeference already ends in `geoNote()`. `placeField` also calls it directly, before its own reset.
+- "Clear" restores the practice field for an image-less plan: the pure `clearDropsGeo({ hasField, points })` says when the georeference goes (no image, and no corner or waypoint left in either mode). "Undo point" never drops it.
+- A test scans `src/js` and fails if `fieldMode` is assigned anywhere else, or if the image-or-georeference rule appears outside `userFieldActive`.
 
 ## Next structural step
 
@@ -87,4 +97,4 @@ Turn the shared-scope fragments into real modules with explicit imports, so feat
 
 ## Known limits
 
-Flat terrain. Generic airframe. North-up overlays only. Home point placed automatically at import and movable afterwards, but fixed on the built-in practice field. An imported plan with no image leaves the practice scenery visible around home. First polygon and first path only on import. Rendering and input are not covered by automated tests, so every release needs a manual browser check.
+Flat terrain. Generic airframe. North-up overlays only. Home point placed automatically at import and movable afterwards, but fixed on the built-in practice field. An imported plan with no image flies over the plain forage ground, which is 400 m square, and "Whole field" still draws the practice field rectangle there. First polygon and first path only on import. Rendering and input are not covered by automated tests, so every release needs a manual browser check.

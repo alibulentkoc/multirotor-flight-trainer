@@ -6,6 +6,10 @@
 - "Set home" always answers a press: a note under the button (red when refused or failed), a banner on the map, and a changed cursor while it waits for the click.
 - On the practice field, where home is fixed, "Set home" is greyed out and a note under it says why. It becomes active as soon as a field image or a plan is loaded.
 - "Whole field", "Fit to plan", and the map background follow the field image after a home move.
+- Fixed: importing a plan with no image (KML, GeoJSON, or CSV only) left the practice scenery standing around home, with its colliders and range sensor targets still active. It now switches to the user's own field exactly as a field image does: scenery and drills hidden (also on the map), colliders and range targets off, longer view distance, drone reset to the pad.
+- "Clear" on an image-less imported plan restores the practice field once no corner or waypoint is left: the georeference is dropped and the scenery, colliders, range targets, and drills come back.
+- Returning to the practice field (by "Remove field image" or "Clear") now resets the drone to the home pad, so it cannot reappear inside an obstacle.
+- Internal: one pure function, `userFieldActive`, decides whether the user's own field is active. `fieldMode`, the scenery, the fog, and "Set home" are all derived from it through `syncFieldMode`. Tests added, including a guard that `fieldMode` is assigned in one place only.
 - Internal: plan computation moved out of DOM code into a pure `planCompute`, with planner constants in named blocks (`PLAN_LIMITS`, `PLAN_TIMES`). Results are unchanged.
 - Tests added for plan computation (including the manual's worked example) and for the home shift.
 
