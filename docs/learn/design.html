@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Designing a multirotor</title>
+<link rel="preload" href="../labs/fonts/LM-regular.woff2" as="font" type="font/woff2" crossorigin>
+<style>@font-face{font-family:"Latin Modern";font-style:normal;font-weight:400;font-display:swap;src:url("../labs/fonts/LM-regular.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:italic;font-weight:400;font-display:swap;src:url("../labs/fonts/LM-italic.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:normal;font-weight:700;font-display:swap;src:url("../labs/fonts/LM-bold.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:italic;font-weight:700;font-display:swap;src:url("../labs/fonts/LM-bold-italic.woff2") format("woff2")}
+:root{--bg:#f4f3ef;--paper:#fffffc;--ink:#111111;--muted:#555555;--line:#111111;--soft:#cfcdc6;--accent:#8a2b06;--chip:#f1efe8;--ok:#1d5e3c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15171a;--paper:#1c1f23;--ink:#e9e6df;--muted:#a9a59b;--line:#e9e6df;--soft:#3a3e44;--accent:#f0a27c;--chip:#24282d;--ok:#7fcfa4}}
+:root[data-theme="dark"]{--bg:#15171a;--paper:#1c1f23;--ink:#e9e6df;--muted:#a9a59b;--line:#e9e6df;--soft:#3a3e44;--accent:#f0a27c;--chip:#24282d;--ok:#7fcfa4}
+*{box-sizing:border-box}
+html{font-size:20px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Latin Modern","Latin Modern Roman","CMU Serif","Computer Modern Serif",Georgia,"Times New Roman",serif;line-height:1.45;
+  text-rendering:optimizeLegibility;font-kerning:normal;font-variant-ligatures:common-ligatures}
+.top{max-width:720px;margin:0 auto;padding:14px 8px 0;display:flex;gap:16px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;font-size:.85rem}
+.top a{color:var(--ink);text-decoration:none}
+.top .brand{font-variant:small-caps;letter-spacing:.04em}
+.btn{border:1px solid var(--ink);padding:4px 14px;font-weight:700}
+.btn:hover{background:var(--ink);color:var(--paper) !important}
+main{max-width:720px;margin:14px auto 40px;background:var(--paper);border:1px solid var(--soft);padding:52px 64px 48px}
+h1{font-size:1.72rem;font-weight:400;line-height:1.2;text-align:center;margin:0 0 .35rem}
+.level{text-align:center;font-style:italic;color:var(--muted);margin-bottom:1.6rem}
+h2{font-size:1.25rem;font-weight:700;margin:2rem 0 .5rem}
+p{margin:.9rem 0 .3rem;text-align:justify;hyphens:auto}
+ol,ul{margin:.25rem 0 .9rem;padding-left:1.7rem} li{margin:.28rem 0;text-align:left}
+strong{font-weight:700}
+hr{border:0;border-top:1px solid var(--soft);margin:1.5rem 0}
+a{color:var(--accent)}
+pre{background:var(--chip);border:1px solid var(--soft);padding:10px 14px;overflow-x:auto;font:.72rem/1.5 "Latin Modern Mono","CMU Typewriter Text","Courier New",monospace}
+.scroll{overflow-x:auto}
+/* booktabs-style tables: heavy top and bottom rules, light mid rule, no vertical lines */
+table{border-collapse:collapse;margin:.9rem auto;font-size:.92rem;border-top:2px solid var(--line);border-bottom:2px solid var(--line)}
+th,td{padding:.32rem .9rem;text-align:left;vertical-align:middle;border:0}
+thead th{border-bottom:1px solid var(--line);font-weight:700}
+tbody tr:first-child td{padding-top:.45rem}
+td:empty{min-width:3.4rem;height:2rem;border-bottom:1px dotted var(--muted)}
+.calm{border-left:3px solid var(--ink);padding:.1rem 0 .1rem 1rem;margin:1rem 0;font-style:italic;color:var(--muted)}
+.calm ul{margin:0;padding-left:1.1rem;list-style:none} .calm li{margin:.15rem 0} .calm strong{font-style:normal;color:var(--ink)}
+details.keys{margin:1rem 0} details.keys summary{cursor:pointer;font-variant:small-caps;letter-spacing:.03em;color:var(--muted)}
+nav.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:.4rem;font-size:.9rem;font-style:italic}
+input[type=checkbox]{width:1.05rem;height:1.05rem;accent-color:var(--ok);vertical-align:middle}
+input.score{width:3.6rem;font:inherit;padding:1px 6px;border:0;border-bottom:1px solid var(--muted);background:transparent;color:var(--ink);text-align:center}
+.done-row td{color:var(--muted)} .done-row a{color:var(--muted)}
+.note{color:var(--muted);font-size:.85rem;font-style:italic;text-align:center}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:760px){html{font-size:18px} main{margin:10px 0 0;border-left:0;border-right:0;padding:30px 22px} p{text-align:left}}
+@media print{.top,nav.foot,details.keys{display:none} html{font-size:11pt} body{background:#fff} main{border:0;margin:0;max-width:none;padding:0} .labpage{page-break-after:always}}
+
+svg{max-width:100%;height:auto;display:block;margin:0 auto;font-family:inherit;font-size:16px;color:var(--ink)}
+svg text{fill:currentColor} svg text.small{font-size:13px} svg text[style]{fill:#fff}
+figure{margin:1.4rem 0 1.6rem} figure .scroll{overflow-x:auto} figure svg{min-width:560px}
+figcaption{font-size:.9rem;text-align:center;margin-top:.5rem;color:var(--ink)} figcaption b{font-weight:700}
+.top .links{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+.parts{display:grid;grid-template-columns:72px 1fr;gap:.2rem 1rem;align-items:start;margin:1rem 0}
+.parts .icon{width:64px;height:64px;margin:.2rem 0 0;min-width:0}
+.parts h3{margin:.2rem 0 .1rem;font-size:1.05rem} .parts p{margin:.15rem 0;text-align:left;hyphens:manual}
+.parts p b{font-weight:700}
+h3{font-size:1.05rem;margin:1.2rem 0 .2rem}
+.try{border:1px solid var(--soft);border-left:3px solid var(--accent);padding:.5rem 1rem;margin:1.2rem 0;background:var(--chip)}
+.try p{margin:.25rem 0;text-align:left} .try b{font-variant:small-caps;letter-spacing:.03em}
+.eq{text-align:center;margin:.8rem 0;font-style:italic;hyphens:manual} .eq span{font-style:normal}
+.chap{display:grid;gap:.9rem;margin:1.4rem 0} .chap a{display:block;border:1px solid var(--soft);padding:.7rem 1rem;text-decoration:none;color:var(--ink)}
+.chap a:hover{border-color:var(--ink)} .chap b{font-size:1.1rem} .chap span{display:block;color:var(--muted);font-style:italic;font-size:.95rem}
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin:1rem 0} .calc label{display:grid;grid-template-columns:1fr 5.2rem;gap:.5rem;align-items:center;margin:.3rem 0;font-size:.92rem}
+.calc input{font:inherit;padding:1px 6px;border:0;border-bottom:1px solid var(--muted);background:transparent;color:var(--ink);text-align:right;width:100%}
+.calc table{margin:0;width:100%} .calc td:last-child{text-align:right;font-weight:700} #verdict{font-style:italic;margin-top:.6rem;text-align:left}
+@media (max-width:760px){.calc{grid-template-columns:1fr}}
+@media print{.try{background:none} figure{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="index.html">Multirotor Flight Trainer: Fundamentals</a><span class="links"><a href="../labs/index.html">Labs</a><a href="../manual/index.html">Manual</a><a class="btn" href="../../index.html" target="_blank" rel="noopener">Open the trainer</a></span></div>
+<main>
+<h1>Designing a multirotor</h1>
+<div class="level">Fundamentals, chapter 3</div>
+
+<p>Designing a drone is a balancing act. Every part adds weight. Weight needs thrust. Thrust needs power. Power needs a bigger battery, which adds weight again. This chapter gives the few rules that keep the circle under control.</p>
+<h2>Start from the job</h2>
+<p>Ask three questions first. What must it carry? How long must it fly? How much wind must it handle? The answers set the payload, the battery, and the thrust. The rest follows.</p>
+<h2>Weight, thrust, and the thrust-to-weight ratio</h2>
+<p>Add up everything that flies: frame, motors, electronics, battery, and payload. That is the all-up weight. Then add up the maximum thrust of all the motors. Divide one by the other.</p>
+<p class="eq">thrust-to-weight ratio <span>=</span> total maximum thrust <span>/</span> all-up weight</p>
+<div class="scroll"><table><thead><tr><th>Ratio</th><th>What it means</th></tr></thead><tbody>
+<tr><td>Below 1.5</td><td>Too heavy. It may lift off, but it cannot correct itself or fight wind.</td></tr>
+<tr><td>About 2</td><td>The practical minimum. It hovers at half throttle, which leaves the other half for control and wind.</td></tr>
+<tr><td>2 to 3</td><td>A good range for camera, mapping, and spray drones.</td></tr>
+<tr><td>Above 4</td><td>Agile and fast, as in racing drones. Flight time is short.</td></tr>
+</tbody></table></div>
+<p>The drone in the trainer weighs 1.2 kg and has a ratio of 2.6. Each of its four motors can lift about 0.78 kg.</p>
+<h2>What payload costs</h2>
+<p>Payload hurts twice. It lowers the thrust-to-weight ratio, so the drone handles worse. It also raises the power needed to hover, so the drone flies for less time. The power grows faster than the weight:</p>
+<p class="eq">hover power <span>=</span> (weight)<sup>1.5</sup> <span>/</span> <span>&radic;</span>(2 &rho; A) <span>/</span> efficiency</p>
+<p>Here &rho; is the air density and A is the total area swept by the propellers. Two lessons come out of this formula. Doubling the weight needs almost three times the power. Larger propellers lower the power, which is why drones that lift heavy loads have big, slow propellers.</p>
+<h2>Flight time</h2>
+<p class="eq">flight time <span>=</span> usable battery energy <span>/</span> average power</p>
+<p>Battery energy in watt-hours is capacity in amp-hours times voltage. Plan to use about 80 percent of it and land with the rest. A bigger battery adds time, but it adds weight too, so each extra pack gives less than the one before. Past a certain size, a bigger battery makes the flight shorter.</p>
+<h2>A small design calculator</h2>
+<p>Change the numbers and watch the results. The starting values describe the drone in the trainer. Try adding 500 g of payload. Then try a larger battery.</p>
+<div class="calc">
+<div>
+<label>Frame, motors, and electronics (g)<input type="number" id="cFrame" value="800" min="50"></label>
+<label>Battery (g)<input type="number" id="cBatt" value="400" min="10"></label>
+<label>Payload (g)<input type="number" id="cPay" value="0" min="0"></label>
+<label>Number of motors<input type="number" id="cN" value="4" min="3" max="12"></label>
+<label>Maximum thrust per motor (g)<input type="number" id="cThr" value="780" min="50"></label>
+<label>Propeller diameter (in)<input type="number" id="cDia" value="10" min="2" step="0.5"></label>
+<label>Battery capacity (mAh)<input type="number" id="cCap" value="5000" min="100" step="100"></label>
+<label>Battery voltage (V)<input type="number" id="cV" value="11.1" min="3" step="0.1"></label>
+</div>
+<div>
+<table><tbody>
+<tr><td>All-up weight</td><td id="oW"></td></tr>
+<tr><td>Thrust-to-weight ratio</td><td id="oT"></td></tr>
+<tr><td>Throttle share used to hover</td><td id="oH"></td></tr>
+<tr><td>Battery energy</td><td id="oE"></td></tr>
+<tr><td>Estimated hover power</td><td id="oP"></td></tr>
+<tr><td>Estimated hover time</td><td id="oM"></td></tr>
+</tbody></table>
+<p id="verdict"></p>
+</div>
+</div>
+<p class="note">A first estimate only. It assumes sea-level air, an overall efficiency of 50 percent, 80 percent usable battery, and steady hover. Real flight time is usually shorter, because of wind, maneuvering, cold, and battery age.</p>
+<div class="try"><p><b>Try it in the trainer.</b> <a href="../labs/lab-26-running-out-of-battery.html">Lab 26</a> shows what happens when a plan needs more energy than the battery holds.</p></div>
+<h2>Balance</h2>
+<p>Place heavy parts, above all the battery and the payload, so that the balance point sits at the center of the motors. If it does not, some motors work harder than others all the time. That wastes energy and leaves less in reserve for control.</p>
+<h2>How many rotors?</h2>
+<p>More rotors lift more and add safety. A quadcopter cannot fly with one motor out. A hexacopter can often limp home. An octocopter usually can. The price is weight, cost, and complexity.</p>
+<h2>Multirotor, fixed wing, or hybrid?</h2>
+<figure><div class="scroll"><svg viewBox="0 0 680 210" role="img" aria-label="Five common UAV types seen from above" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker><marker id="ahA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker></defs><line x1="70.0" y1="90.0" x2="101.1" y2="121.1" stroke="currentColor" stroke-width="3"/><line x1="70.0" y1="90.0" x2="38.9" y2="121.1" stroke="currentColor" stroke-width="3"/><line x1="70.0" y1="90.0" x2="38.9" y2="58.9" stroke="currentColor" stroke-width="3"/><line x1="70.0" y1="90.0" x2="101.1" y2="58.9" stroke="currentColor" stroke-width="3"/><circle cx="101" cy="121" r="15" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="38" cy="121" r="15" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="38" cy="58" r="15" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="101" cy="58" r="15" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="70" cy="90" r="9" stroke="currentColor" stroke-width="1.5" style="fill:var(--chip)"/><text x="70.0" y="174.0" text-anchor="middle" class="" font-weight="700">Quadcopter</text><text x="70.0" y="192.0" text-anchor="middle" class="small" >4 rotors</text><line x1="200.0" y1="90.0" x2="246.0" y2="90.0" stroke="currentColor" stroke-width="3"/><line x1="200.0" y1="90.0" x2="223.0" y2="129.8" stroke="currentColor" stroke-width="3"/><line x1="200.0" y1="90.0" x2="177.0" y2="129.8" stroke="currentColor" stroke-width="3"/><line x1="200.0" y1="90.0" x2="154.0" y2="90.0" stroke="currentColor" stroke-width="3"/><line x1="200.0" y1="90.0" x2="177.0" y2="50.2" stroke="currentColor" stroke-width="3"/><line x1="200.0" y1="90.0" x2="223.0" y2="50.2" stroke="currentColor" stroke-width="3"/><circle cx="246" cy="90" r="13" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="223" cy="129" r="13" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="177" cy="129" r="13" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="154" cy="90" r="13" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="176" cy="50" r="13" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="223" cy="50" r="13" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="200" cy="90" r="9" stroke="currentColor" stroke-width="1.5" style="fill:var(--chip)"/><text x="200.0" y="174.0" text-anchor="middle" class="" font-weight="700">Hexacopter</text><text x="200.0" y="192.0" text-anchor="middle" class="small" >6 rotors</text><line x1="330.0" y1="90.0" x2="374.3" y2="108.4" stroke="currentColor" stroke-width="3"/><line x1="330.0" y1="90.0" x2="348.4" y2="134.3" stroke="currentColor" stroke-width="3"/><line x1="330.0" y1="90.0" x2="311.6" y2="134.3" stroke="currentColor" stroke-width="3"/><line x1="330.0" y1="90.0" x2="285.7" y2="108.4" stroke="currentColor" stroke-width="3"/><line x1="330.0" y1="90.0" x2="285.7" y2="71.6" stroke="currentColor" stroke-width="3"/><line x1="330.0" y1="90.0" x2="311.6" y2="45.7" stroke="currentColor" stroke-width="3"/><line x1="330.0" y1="90.0" x2="348.4" y2="45.7" stroke="currentColor" stroke-width="3"/><line x1="330.0" y1="90.0" x2="374.3" y2="71.6" stroke="currentColor" stroke-width="3"/><circle cx="374" cy="108" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="348" cy="134" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="311" cy="134" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="285" cy="108" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="285" cy="71" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="311" cy="45" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="348" cy="45" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="374" cy="71" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="330" cy="90" r="9" stroke="currentColor" stroke-width="1.5" style="fill:var(--chip)"/><text x="330.0" y="174.0" text-anchor="middle" class="" font-weight="700">Octocopter</text><text x="330.0" y="192.0" text-anchor="middle" class="small" >8 rotors</text><path d="M465,82 q6,-44 0,-52 q-6,8 0,52 z M465,50 v60" stroke="currentColor" stroke-width="1.6" style="fill:var(--paper)"/><path d="M465,68 l-58,16 v8 l58,-6 l58,6 v-8 z" stroke="currentColor" stroke-width="1.6" style="fill:var(--paper)"/><path d="M465,114 l-20,8 v6 l20,-4 l20,4 v-6 z" stroke="currentColor" stroke-width="1.6" style="fill:var(--paper)"/><rect x="461" y="44" width="8" height="78" rx="4" stroke="currentColor" stroke-width="1.6" style="fill:var(--paper)"/><text x="465.0" y="174.0" text-anchor="middle" class="" font-weight="700">Fixed wing</text><text x="465.0" y="192.0" text-anchor="middle" class="small" >wings make lift</text><path d="M600,82 q6,-44 0,-52 q-6,8 0,52 z M600,50 v60" stroke="currentColor" stroke-width="1.6" style="fill:var(--paper)"/><path d="M600,68 l-58,16 v8 l58,-6 l58,6 v-8 z" stroke="currentColor" stroke-width="1.6" style="fill:var(--paper)"/><path d="M600,114 l-20,8 v6 l20,-4 l20,4 v-6 z" stroke="currentColor" stroke-width="1.6" style="fill:var(--paper)"/><rect x="596" y="44" width="8" height="78" rx="4" stroke="currentColor" stroke-width="1.6" style="fill:var(--paper)"/><line x1="566.0" y1="82.0" x2="566.0" y2="56.0" stroke="currentColor" stroke-width="0"/><line x1="634.0" y1="82.0" x2="634.0" y2="56.0" stroke="currentColor" stroke-width="0"/><line x1="566.0" y1="82.0" x2="566.0" y2="110.0" stroke="currentColor" stroke-width="0"/><line x1="634.0" y1="82.0" x2="634.0" y2="110.0" stroke="currentColor" stroke-width="0"/><line x1="566" y1="46" x2="566" y2="120" stroke="currentColor" stroke-width="3"/><line x1="634" y1="46" x2="634" y2="120" stroke="currentColor" stroke-width="3"/><circle cx="566" cy="46" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="634" cy="46" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="566" cy="120" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><circle cx="634" cy="120" r="11" stroke="currentColor" stroke-width="1.4" style="fill:var(--paper)"/><text x="600.0" y="174.0" text-anchor="middle" class="" font-weight="700">VTOL hybrid</text><text x="600.0" y="192.0" text-anchor="middle" class="small" >rotors and wings</text></svg></div><figcaption><b>Figure 1.</b> Common UAV layouts, seen from above.</figcaption></figure>
+<div class="scroll"><table><thead><tr><th></th><th>Quadcopter</th><th>Hexa or octocopter</th><th>Fixed wing</th><th>VTOL hybrid</th></tr></thead><tbody>
+<tr><td>Can hover</td><td>Yes</td><td>Yes</td><td>No</td><td>For take off and landing</td></tr>
+<tr><td>Typical flight time</td><td>15 to 40 min</td><td>10 to 30 min</td><td>45 to 120 min</td><td>60 to 120 min</td></tr>
+<tr><td>Payload</td><td>Light</td><td>Heavy</td><td>Light</td><td>Light to medium</td></tr>
+<tr><td>Cruise speed</td><td>Slow</td><td>Slow</td><td>Fast</td><td>Fast</td></tr>
+<tr><td>Space to launch and land</td><td>Very small</td><td>Small</td><td>Large, open</td><td>Small</td></tr>
+<tr><td>Survives a motor failure</td><td>No</td><td>Often</td><td>Glides</td><td>Depends</td></tr>
+<tr><td>Typical farm job</td><td>Scouting, small field maps, training</td><td>Spraying, heavy sensors</td><td>Mapping large fields</td><td>Mapping large fields with no runway</td></tr>
+</tbody></table></div>
+<p>The reason for the split is simple. A wing gets lift from forward motion, which costs little power. A rotor must make all of its lift by pushing air down, which costs a lot. So wings win on endurance and area covered, and rotors win on hovering, precision, and working in tight spaces.</p>
+<h2>A short design checklist</h2>
+<ol>
+<li>Write down the payload, the flight time, and the wind limit the job needs.</li>
+<li>Estimate the all-up weight. Choose motors and propellers for a thrust-to-weight ratio of 2 or more at that weight.</li>
+<li>Choose the largest propellers the frame allows. Match the motor KV and the battery voltage to them.</li>
+<li>Size the battery for the flight time, plus a 20 percent reserve. Then recompute the weight and check the ratio again.</li>
+<li>Check that the speed controllers and the wiring can carry the peak current.</li>
+<li>Place the battery and the payload so the drone balances at its center.</li>
+<li>Test in steps: on the bench with no propellers, then a tethered hover, then free flight in calm air.</li>
+</ol>
+<hr>
+<nav class="foot"><span><a href="flight.html">Previous: How a multirotor flies</a></span><span><a href="index.html">Fundamentals</a></span><span></span></nav>
+</main>
+<script>
+(function(){
+  function v(id){ var x = parseFloat(document.getElementById(id).value); return isFinite(x) ? x : 0; }
+  function set(id, s){ document.getElementById(id).textContent = s; }
+  function run(){
+    var m = (v('cFrame') + v('cBatt') + v('cPay'))/1000, n = Math.max(1, v('cN')), thr = n*v('cThr')/1000;
+    var twr = m > 0 ? thr/m : 0, wh = v('cCap')/1000*v('cV');
+    var area = n*Math.PI*Math.pow(v('cDia')*0.0254/2, 2), W = m*9.81;
+    var p = area > 0 ? Math.pow(W, 1.5)/Math.sqrt(2*1.225*area)/0.5 : 0, mins = p > 0 ? 0.8*wh/p*60 : 0;
+    set('oW', (m*1000).toFixed(0) + ' g'); set('oT', twr.toFixed(2)); set('oH', twr > 0 ? Math.min(100, 100/twr).toFixed(0) + ' %' : '');
+    set('oE', wh.toFixed(1) + ' Wh'); set('oP', p.toFixed(0) + ' W'); set('oM', mins.toFixed(0) + ' min');
+    var t = twr < 1 ? 'It cannot lift off.' : twr < 1.5 ? 'Too heavy. It will lift off but cannot be controlled safely.' : twr < 2 ? 'It flies, but with little in reserve for wind or quick corrections.'
+      : twr <= 3 ? 'A sound design for camera, mapping, or spray work.' : twr <= 5 ? 'Lively. More thrust than the job needs, so it could carry more or use smaller motors.' : 'Racing territory. Very agile, with short flight times.';
+    set('verdict', t);
+  }
+  ['cFrame','cBatt','cPay','cN','cThr','cDia','cCap','cV'].forEach(function(id){ document.getElementById(id).addEventListener('input', run); });
+  run();
+})();
+</script>
+</body>
+</html>
