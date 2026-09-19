@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- New "Fundamentals" section, `docs/learn/index.html`, is linked from everywhere. The side panel gains a "Learn" link before "Labs" and "Manual", opening in a new tab. The manual page and every lab page have a "Fundamentals" link in the top bar, before the "Open the trainer" button. The README gains a "Fundamentals" line.
+- Internal: the top bar link group rule (`.top .nav`) moved from `tools/build-docs.js` into the lab pages' CSS, which the manual page already reuses. A test checks that every lab page and the manual link to the Fundamentals page.
 - Side panel: two small links under the title. "Labs" opens `docs/labs/index.html` and "Manual" opens `docs/manual/index.html`, both in a new tab. The README gains a "Labs" line pointing to the Pages site.
 - The manual is now a web page, `docs/manual/index.html`, styled like the lab pages (same CSS, fonts loaded from `docs/labs/fonts/`, dark mode, print rules). Every section heading has an id, and the Contents list links to the sections. The top bar has a "Labs" link and the "Open the trainer" button. The README links to the page on the Pages site and keeps a link to the Markdown source.
 - Internal: `tools/build-docs.js`, a dependency-free Markdown converter, generates the manual page from `docs/USER_MANUAL.md`. New script `npm run build:docs`, and `npm run build` runs it too. Tests added for the converter, and one that fails when the page is out of date.

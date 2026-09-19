@@ -119,6 +119,16 @@ test('manual page: every Contents link has a target, fonts come from ../labs/fon
   links.forEach(function(l){ assert(html.indexOf(' id="' + l.slice(7, -1) + '"') >= 0, 'no target for ' + l); });
   assert(html.indexOf('url("../labs/fonts/LM-regular.woff2")') >= 0 && html.indexOf('url("fonts/') < 0);
   assert(html.indexOf('href="../../index.html"') >= 0 && html.indexOf('href="../labs/index.html"') >= 0, 'top bar links'); });
+test('Fundamentals is linked: side panel, manual top bar, and every lab page, before "Open the trainer"', function(){
+  var rootDir = path.join(__dirname, '..'), labsDir = path.join(rootDir, 'docs/labs');
+  assert(fs.existsSync(path.join(rootDir, 'docs/learn/index.html')), 'docs/learn/index.html is missing');
+  assert(fs.readFileSync(path.join(rootDir, 'src/index.template.html'), 'utf8').indexOf('<a href="docs/learn/index.html" target="_blank" rel="noopener">Learn</a>') >= 0, 'side panel link');
+  var bar = /<span class="nav">(?:<a [^>]*>[^<]*<\/a>)*<a class="btn" /, link = '<a href="../learn/index.html">Fundamentals</a>';
+  var pages = fs.readdirSync(labsDir).filter(function(f){ return /.html$/.test(f); }).map(function(f){ return { name: f, html: fs.readFileSync(path.join(labsDir, f), 'utf8') }; });
+  assert(pages.length >= 32, 'lab pages: ' + pages.length);
+  pages.concat([{ name: 'manual', html: docs.buildManual() }]).forEach(function(p){
+    var m = bar.exec(p.html); assert(m && m[0].indexOf(link) >= 0, 'no Fundamentals link in the top bar of ' + p.name);
+    assert(p.html.indexOf('.top .nav{') >= 0, 'no .top .nav rule in ' + p.name); }); });
 test('docs/manual/index.html is up to date with docs/USER_MANUAL.md (run "npm run build:docs" if this fails)', function(){
   assert.strictEqual(fs.readFileSync(path.join(__dirname, '..', docs.OUT), 'utf8'), docs.buildManual()); });
 

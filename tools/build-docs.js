@@ -9,9 +9,8 @@ var fs = require('fs'), path = require('path');
 var root = path.join(__dirname, '..');
 var SRC = 'docs/USER_MANUAL.md', OUT = 'docs/manual/index.html', STYLE_FROM = 'docs/labs/index.html';
 var CONTENTS = 'Contents';   // the list under this heading becomes links to the sections
-// Rules the lab pages do not need: the top bar link group, h3, inline code, and print breaks.
+// Rules the lab pages do not need: h3, inline code, and print breaks.
 var EXTRA_CSS = [
-  '.top .nav{display:flex;gap:16px;align-items:baseline}',
   'h2,h3{scroll-margin-top:12px}',
   'h3{font-size:1.05rem;font-weight:700;margin:1.5rem 0 .4rem}',
   'code{font:.85em "Latin Modern Mono","CMU Typewriter Text","Courier New",monospace;background:var(--chip);padding:0 .2em}',
@@ -144,7 +143,7 @@ function page(md, css){
     '</style>',
     '</head>',
     '<body>',
-    '<div class="top"><a class="brand" href="index.html">' + esc(doc.title) + '</a><span class="nav"><a href="../labs/index.html">Labs</a><a class="btn" href="../../index.html" target="_blank" rel="noopener">Open the trainer</a></span></div>',
+    '<div class="top"><a class="brand" href="index.html">' + esc(doc.title) + '</a><span class="nav"><a href="../learn/index.html">Fundamentals</a><a href="../labs/index.html">Labs</a><a class="btn" href="../../index.html" target="_blank" rel="noopener">Open the trainer</a></span></div>',
     '<main>',
     doc.html,
     '</main>',

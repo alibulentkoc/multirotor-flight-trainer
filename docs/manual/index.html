@@ -22,6 +22,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Latin Modern","
 .top .brand{font-variant:small-caps;letter-spacing:.04em}
 .btn{border:1px solid var(--ink);padding:4px 14px;font-weight:700}
 .btn:hover{background:var(--ink);color:var(--paper) !important}
+.top .nav{display:flex;gap:16px;align-items:baseline}
 main{max-width:720px;margin:14px auto 40px;background:var(--paper);border:1px solid var(--soft);padding:52px 64px 48px}
 h1{font-size:1.72rem;font-weight:400;line-height:1.2;text-align:center;margin:0 0 .35rem}
 .level{text-align:center;font-style:italic;color:var(--muted);margin-bottom:1.6rem}
@@ -50,7 +51,6 @@ input.score{width:3.6rem;font:inherit;padding:1px 6px;border:0;border-bottom:1px
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:760px){html{font-size:18px} main{margin:10px 0 0;border-left:0;border-right:0;padding:30px 22px} p{text-align:left}}
 @media print{.top,nav.foot,details.keys{display:none} html{font-size:11pt} body{background:#fff} main{border:0;margin:0;max-width:none;padding:0} .labpage{page-break-after:always}}
-.top .nav{display:flex;gap:16px;align-items:baseline}
 h2,h3{scroll-margin-top:12px}
 h3{font-size:1.05rem;font-weight:700;margin:1.5rem 0 .4rem}
 code{font:.85em "Latin Modern Mono","CMU Typewriter Text","Courier New",monospace;background:var(--chip);padding:0 .2em}
@@ -61,7 +61,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 </style>
 </head>
 <body>
-<div class="top"><a class="brand" href="index.html">Multirotor Flight Trainer: User Manual</a><span class="nav"><a href="../labs/index.html">Labs</a><a class="btn" href="../../index.html" target="_blank" rel="noopener">Open the trainer</a></span></div>
+<div class="top"><a class="brand" href="index.html">Multirotor Flight Trainer: User Manual</a><span class="nav"><a href="../learn/index.html">Fundamentals</a><a href="../labs/index.html">Labs</a><a class="btn" href="../../index.html" target="_blank" rel="noopener">Open the trainer</a></span></div>
 <main>
 <h1 id="multirotor-flight-trainer-user-manual">Multirotor Flight Trainer: User Manual</h1>
 <p>This manual covers the browser-based multirotor flight trainer (index.html). It explains how to fly, how to use the sensors, how to plan and fly a survey, and how to bring in your own field.</p>
@@ -115,7 +115,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 </ul>
 <p>Two on-screen sticks sit at the bottom corners. They show your current stick input from any source. You can also drag them with a mouse or a finger.</p>
 <p>Two inset pictures at the top right show the drone's front camera and down camera.</p>
-<p><strong>Side panel (right).</strong> Under the title, two small links open in a new tab: &quot;Labs&quot; (the lab sheets) and &quot;Manual&quot; (this manual). Then, from top to bottom: flight mode, action buttons, drills, instruments, sensors, conditions and view, keyboard help, controller setup, and results.</p>
+<p><strong>Side panel (right).</strong> Under the title, three small links open in a new tab: &quot;Learn&quot; (the Fundamentals pages, background reading on how a multirotor flies and how it is built), &quot;Labs&quot; (the lab sheets), and &quot;Manual&quot; (this manual). Then, from top to bottom: flight mode, action buttons, drills, instruments, sensors, conditions and view, keyboard help, controller setup, and results.</p>
 <h2 id="4-controls">4. Controls</h2>
 <p>All control layouts follow Mode 2, the most common RC layout. The left stick is throttle and yaw. The right stick is pitch and roll.</p>
 <h3 id="keyboard">Keyboard</h3>

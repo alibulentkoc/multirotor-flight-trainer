@@ -60,7 +60,7 @@ Two on-screen sticks sit at the bottom corners. They show your current stick inp
 
 Two inset pictures at the top right show the drone's front camera and down camera.
 
-**Side panel (right).** Under the title, two small links open in a new tab: "Labs" (the lab sheets) and "Manual" (this manual). Then, from top to bottom: flight mode, action buttons, drills, instruments, sensors, conditions and view, keyboard help, controller setup, and results.
+**Side panel (right).** Under the title, three small links open in a new tab: "Learn" (the Fundamentals pages, background reading on how a multirotor flies and how it is built), "Labs" (the lab sheets), and "Manual" (this manual). Then, from top to bottom: flight mode, action buttons, drills, instruments, sensors, conditions and view, keyboard help, controller setup, and results.
 
 ## 4. Controls
 

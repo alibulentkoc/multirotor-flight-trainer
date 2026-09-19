@@ -7,6 +7,9 @@ A browser-based multirotor flight simulator and survey mission planner for teach
 
 **Read the manual:** [https://alibulentkoc.github.io/multirotor-flight-trainer/docs/manual/index.html](https://alibulentkoc.github.io/multirotor-flight-trainer/docs/manual/index.html) (Markdown source: [docs/USER_MANUAL.md](docs/USER_MANUAL.md))
 
+**Fundamentals:** short background pages on how a multirotor flies, its parts, and its design, at
+`https://alibulentkoc.github.io/multirotor-flight-trainer/docs/learn/index.html`
+
 **Labs:** step-by-step lab sheets for students, at
 `https://alibulentkoc.github.io/multirotor-flight-trainer/docs/labs/index.html`
 
