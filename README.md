@@ -39,13 +39,31 @@ This is a teaching tool, not a certified training device.
 ## Repository layout
 
 ```
-index.html                 the application (Three.js r128 inlined)
+index.html                 the built application (single file, three.js inlined). This is what GitHub Pages serves
+src/index.template.html    page markup with placeholders for CSS, three.js, and the app script
+src/styles.css             styles
+src/js/*.js                application source, concatenated in file-name order
+vendor/                    three.js r128 and its license
+build.js                   build script (Node, no dependencies)
+test/run.js                headless tests (Node, no dependencies)
 docs/USER_MANUAL.md        user manual
-THIRD_PARTY_NOTICES.md     licenses of bundled and on-demand libraries
-LICENSE                    license for this project
-CITATION.cff               how to cite
-.nojekyll                  tells GitHub Pages to serve files as-is
+docs/DESIGN_NOTES.md       architecture, conventions, and roadmap
+legacy/v0.1/index.html     frozen copy of the last hand-built single-file version
+CHANGELOG.md               version history
 ```
+
+## Developing
+
+You need Node.js 18 or newer. There is nothing to install.
+
+```
+npm test          run the headless tests
+npm run build     rebuild index.html from src/
+```
+
+Edit files in `src/`, never `index.html` directly. Run the tests, rebuild, then commit both `src/` and the rebuilt `index.html`. The test suite fails if `index.html` is out of date.
+
+The frozen v0.1 version stays available at `legacy/v0.1/` on the Pages site.
 
 ## How to cite
 

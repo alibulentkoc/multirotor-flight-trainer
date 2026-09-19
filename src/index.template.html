@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multirotor Flight Trainer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap">
+<style>
+{{CSS}}
+</style>
+</head>
+<body>
+<div id="view">
+  <div id="strip">
+    <div class="pill" id="armPill">Disarmed</div>
+    <div class="pill" id="task"></div>
+    <div class="pill" id="camPill">View: pilot</div>
+  </div>
+  <div id="plan" hidden>
+    <header><h2>Flight plan</h2><button id="planClose">Close</button></header>
+    <div class="plangrid">
+      <div>
+        <div class="seg two" id="planModes"><button data-pm="area" aria-pressed="true">Survey area</button><button data-pm="route">Waypoint route</button></div>
+        <canvas id="map" width="840" height="840" aria-label="Top-down planning map, north up"></canvas>
+        <div class="row3"><button id="pgUndo">Undo point</button><button id="pgClear">Clear</button><button id="pgWhole">Whole field</button></div>
+        <div class="row3"><button id="pgIn">Zoom in</button><button id="pgOut">Zoom out</button><button id="pgFit">Fit to plan</button></div>
+        <p class="note" id="planHelp"></p>
+        <p class="note">North is up. H is the home point where you stand. The yellow line is the track actually flown, and green dots are photos taken.</p>
+        <div id="wpBox" hidden><div class="scroll"><table id="wpTable" class="wpt"></table></div></div>
+      </div>
+      <div>
+        <div class="f">
+          <label class="wide" for="fieldFile">Import your field: image, KML, KMZ, GeoJSON, CSV waypoints, GeoTIFF, or an image plus its world file. You can also drop files on the view, or copy an image and press Ctrl+V.</label>
+          <input class="wide" type="file" id="fieldFile" multiple accept="image/*,.kml,.kmz,.geojson,.json,.csv,.txt,.tif,.tiff,.jgw,.pgw,.tfw,.wld,.jpgw,.pngw">
+          <p class="note wide" id="geoStatus" style="margin:0"></p>
+          <label for="fieldW">Image width on the ground (m)</label><input type="number" id="fieldW" min="5" max="5000" value="200">
+          <button class="wide" id="calibStart">Set image scale from two points</button>
+          <p class="note wide" id="calibMsg" style="margin:0"></p>
+          <div class="wide" id="calibBox" hidden style="display:grid; grid-template-columns:1fr 92px; gap:6px"><input type="number" id="calibDist" min="1" placeholder="True distance (m)" aria-label="True distance in meters"><button id="calibApply">Apply</button></div>
+          <button class="wide" id="fieldRemove" hidden>Remove field image</button>
+          <label for="pCam">Camera</label><select id="pCam" class="wide"></select>
+          <label for="pAlt">Altitude above ground (m)</label><input type="number" id="pAlt" min="5" max="120" value="40">
+          <label for="pFront">Front overlap (%)</label><input type="number" id="pFront" min="10" max="95" value="75">
+          <label for="pSide">Side overlap (%)</label><input type="number" id="pSide" min="10" max="95" value="70">
+          <label for="pSpeed">Speed (m/s)</label><input type="number" id="pSpeed" min="1" max="8" step="0.5" value="5">
+          <label for="pDir">Flight line direction (deg)</label><input type="number" id="pDir" min="0" max="179" step="5" value="0">
+          <label for="pElev">Field elevation (m MSL)</label><input type="number" id="pElev" min="-100" max="4000" value="220">
+          <label for="pBatt">Battery endurance (min)</label><input type="number" id="pBatt" min="5" max="45" value="20">
+        </div>
+        <div class="scroll"><table id="planOut"></table></div>
+        <p id="planWarn"></p>
+        <div class="row3"><button id="planFly">Fly this plan</button><button id="planStop">Stop and hold</button>
+          <select id="simSpeed" aria-label="Simulation speed"><option value="1">1x time</option><option value="2">2x time</option><option value="4">4x time</option><option value="8">8x time</option></select></div>
+        <div class="row3" style="grid-template-columns:1fr 1fr"><button id="expKML">Export KML</button><button id="expCSV">Export CSV</button></div>
+        <p class="note" id="exportMsg" style="margin-top:4px"></p>
+        <textarea id="exportText" readonly hidden aria-label="Exported plan text"></textarea>
+        <p class="note">Move the right stick at any time to take over. At 20 % battery the drone abandons the plan and returns home.</p>
+      </div>
+    </div>
+    <details>
+      <summary>Terms you need to know</summary>
+      <dl class="gloss">
+        <dt>AGL (above ground level)</dt><dd>Height measured from the ground directly below the drone. Flight plans and the 400 ft rule use AGL.</dd>
+        <dt>MSL (mean sea level) and elevation</dt><dd>Elevation is the height of the ground above sea level. Altitude MSL = field elevation + AGL. GPS and airspace charts report MSL. This simulator uses flat ground, so the two differ by a constant.</dd>
+        <dt>Terrain following</dt><dd>On sloped fields the planner adjusts each waypoint so AGL stays constant. Without it, GSD and overlap change as the ground rises and falls. Not simulated here.</dd>
+        <dt>GSD (ground sample distance)</dt><dd>The ground size of one pixel, in cm/pixel. GSD = sensor width x altitude / (focal length x image width). Lower altitude gives finer GSD but more photos.</dd>
+        <dt>Footprint</dt><dd>The patch of ground covered by one photo. It grows in direct proportion to altitude.</dd>
+        <dt>Front overlap (forward overlap, endlap)</dt><dd>Share of a photo that repeats in the next photo on the same flight line. It sets the distance between shutter triggers. 70 to 80 % is typical for crops.</dd>
+        <dt>Side overlap (sidelap)</dt><dd>Share of a photo that repeats in the neighbouring flight line. It sets the line spacing. 60 to 75 % is typical. Uniform canopies such as forage need more overlap, because stitching software finds fewer matching features.</dd>
+        <dt>Flight line (transect, leg)</dt><dd>One straight pass over the field. The back-and-forth set of lines is called a lawnmower or grid pattern.</dd>
+        <dt>Trigger distance and interval</dt><dd>Distance, and time, between photos. Interval = trigger distance / speed. If the interval is shorter than the camera can write images, slow down or fly higher.</dd>
+        <dt>Nadir</dt><dd>Camera pointing straight down. Mapping flights use nadir images.</dd>
+        <dt>Georeferenced image</dt><dd>An image that carries its own ground coordinates: a GeoTIFF, a KMZ image overlay, or a JPG with a world file. A plain screenshot does not, so you must give its scale.</dd>
+        <dt>KML and KMZ</dt><dd>Google Earth formats for points, paths, polygons, and image overlays. KMZ is a zipped KML that can also hold the image. Coordinates are longitude, latitude, altitude.</dd>
+        <dt>Waypoint</dt><dd>A position and altitude the autopilot flies to. A plan is an ordered list of waypoints.</dd>
+        <dt>Home point and RTH (return to home)</dt><dd>Where the drone took off. RTH brings it back on low battery, lost link, or pilot command.</dd>
+        <dt>VLOS (visual line of sight)</dt><dd>You must be able to see the aircraft with your own eyes through the whole flight. Check the pilot view during a plan to judge this.</dd>
+        <dt>400 ft ceiling</dt><dd>Under US Part 107 rules, small UAS stay at or below 400 ft (122 m) AGL unless near a taller structure.</dd>
+        <dt>Crosswind and crab</dt><dd>Wind across the flight line pushes the drone off track. The autopilot tilts into the wind to hold the line. Flying lines into and with the wind keeps the footprints square.</dd>
+        <dt>Orthomosaic and GCP</dt><dd>An orthomosaic is the single map stitched from the overlapping photos. Ground control points are surveyed markers that tie it to true coordinates.</dd>
+      </dl>
+    </details>
+  </div>
+  <div id="notice" role="status"><h2></h2><p></p></div>
+  <div class="pip" id="pipF"><span>Front camera</span></div>
+  <div class="pip" id="pipD"><span>Down camera</span></div>
+  <div class="stick" id="stickL"><span>Throttle / yaw</span><div class="knob"></div></div>
+  <div class="stick" id="stickR"><span>Pitch / roll</span><div class="knob"></div></div>
+</div>
+
+<aside>
+  <h1>Multirotor Flight Trainer</h1>
+  <p class="sub">Mode 2 sticks. Physics run in this page at 250 Hz.</p>
+
+  <section>
+    <h2 class="s">Flight mode</h2>
+    <div class="seg" id="modes">
+      <button data-mode="pos" aria-pressed="true">Position hold</button>
+      <button data-mode="alt">Altitude hold</button>
+      <button data-mode="angle">Stabilized</button>
+    </div>
+    <p class="modehint" id="modeHint"></p>
+    <div class="row">
+      <button id="bArm">Arm</button>
+      <button id="bTakeoff">Take off</button>
+      <button id="bLand">Land</button>
+      <button id="bReset">Reset</button>
+    </div>
+    <button id="bPlan" style="width:100%; margin-top:8px">Open flight plan</button>
+  </section>
+
+  <section>
+    <h2 class="s">Drills</h2>
+    <div class="drills" id="drills"></div>
+  </section>
+
+  <section>
+    <h2 class="s">Instruments</h2>
+    <div class="inst">
+      <canvas id="hud" width="300" height="300" aria-label="Artificial horizon"></canvas>
+      <dl>
+        <dt>Altitude AGL</dt><dd id="tAlt">0.0 m</dd>
+        <dt>Altitude MSL</dt><dd id="tMsl">220 m</dd>
+        <dt>Climb</dt><dd id="tVz">0.0 m/s</dd>
+        <dt>Ground speed</dt><dd id="tSpd">0.0 m/s</dd>
+        <dt>Heading</dt><dd id="tHdg">000 deg</dd>
+        <dt>Distance</dt><dd id="tDist">0.0 m</dd>
+        <dt>Battery</dt><dd id="tBat">100 %</dd>
+      </dl>
+    </div>
+    <div class="motors">
+      <div class="motor">Front left<div class="bar"><i id="m0"></i></div></div>
+      <div class="motor">Front right<div class="bar"><i id="m1"></i></div></div>
+      <div class="motor">Rear left<div class="bar"><i id="m3"></i></div></div>
+      <div class="motor">Rear right<div class="bar"><i id="m2"></i></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="s">Sensors</h2>
+    <div class="inst">
+      <canvas id="radar" width="300" height="300" aria-label="Obstacle ranges around the drone"></canvas>
+      <dl>
+        <dt>Range down</dt><dd id="sDown">0.00 m</dd>
+        <dt>Range front</dt><dd id="sFront">clear</dd>
+        <dt>Range up</dt><dd id="sUp">clear</dd>
+        <dt>Light</dt><dd id="sLux">0 klx</dd>
+        <dt>Airspeed</dt><dd id="sAir">0.0 m/s</dd>
+        <dt>Wind here</dt><dd id="sWind">0.0 m/s</dd>
+        <dt>Clover below</dt><dd id="sClover">0 %</dd>
+      </dl>
+    </div>
+    <label class="chk"><input type="checkbox" id="avoid" checked> Obstacle avoidance (acts in position hold)</label>
+    <label class="chk"><input type="checkbox" id="landAssist" checked> Landing assist: soft touchdown in every mode</label>
+    <label class="chk"><input type="checkbox" id="pips" checked> Show front and down cameras</label>
+    <p class="note">Ultrasonic rangers reach 6 m to the sides and upward, and 8 m down. Landing assist limits the sink rate near the ground and keeps the drone level for touchdown. Turn it off to practise real landings. Cutting the motors in the air still ends in a crash. The light sensor faces up, so it reads lower when the drone tilts away from the sun. Clover below comes from the ground truth map under the down camera, not from image analysis.</p>
+  </section>
+
+  <section>
+    <h2 class="s">Conditions and view</h2>
+    <label class="ctl">Wind at 10 m<input type="range" id="wind" min="0" max="12" step="0.5" value="0"><output id="windOut">0 m/s</output></label>
+    <label class="ctl">Wind from<input type="range" id="windDir" min="0" max="345" step="15" value="270"><output id="windDirOut">270 deg</output></label>
+    <label class="ctl">Sun height<input type="range" id="sunEl" min="8" max="80" step="1" value="50"><output id="sunElOut">50 deg</output></label>
+    <label class="ctl">Cloud cover<input type="range" id="cloud" min="0" max="100" step="5" value="10"><output id="cloudOut">10 %</output></label>
+    <label class="ctl">Camera<select id="cam" style="grid-column:2 / 4">
+      <option value="los">Pilot (line of sight)</option>
+      <option value="chase">Chase</option>
+      <option value="fpv">Onboard (FPV)</option>
+    </select></label>
+  </section>
+
+  <details>
+    <summary>Keyboard controls</summary>
+    <table class="keys">
+      <tr><td>W / S</td><td>Throttle up / down (left stick)</td></tr>
+      <tr><td>A / D</td><td>Yaw left / right (left stick)</td></tr>
+      <tr><td>Up / Down</td><td>Pitch forward / back (right stick)</td></tr>
+      <tr><td>Left / Right</td><td>Roll left / right (right stick)</td></tr>
+      <tr><td>Shift</td><td>Hold for full stick deflection</td></tr>
+      <tr><td>Space</td><td>Arm or disarm</td></tr>
+      <tr><td>T / L</td><td>Automatic take off / land</td></tr>
+      <tr><td>1 2 3</td><td>Position, altitude, stabilized mode</td></tr>
+      <tr><td>C</td><td>Change camera</td></tr>
+      <tr><td>P</td><td>Open or close the flight plan</td></tr>
+      <tr><td>R</td><td>Reset to the pad</td></tr>
+    </table>
+  </details>
+
+  <details id="padBox">
+    <summary>Controller setup</summary>
+    <p class="note" id="padStatus">No controller detected. Plug in a USB game controller or RC transmitter, then move a stick.</p>
+    <div class="scroll"><table class="map" id="padMap"></table></div>
+    <label class="note" style="display:block"><input type="checkbox" id="thrCentered" checked> Throttle stick springs back to center (game controller). Clear this for an RC transmitter.</label>
+  </details>
+
+  <details open>
+    <summary>Results</summary>
+    <div class="scroll"><table id="log"></table></div>
+    <p class="note" id="logEmpty">Finish a drill to record a score here.</p>
+    <button id="bClear" style="margin-top:8px">Clear results</button>
+  </details>
+</aside>
+
+{{THREE}}
+<script>
+{{APP}}
+</script>
+</body>
+</html>

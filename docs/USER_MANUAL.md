@@ -140,6 +140,15 @@ A touchdown counts as a crash when any of these is true:
 
 Hitting the barn, the bales, the gate, or the tree is also a crash. Disarming in the air cuts the motors, and the drone falls.
 
+**Landing assist.** On by default (Sensors section). It works in every flight mode, including stabilized:
+
+- It caps the sink rate along a braking curve the motors can always hold. High up you can still descend fast. Near the ground the cap falls to about 0.35 m/s, so touchdown is soft even with the throttle fully down.
+- Below 0.8 m it limits tilt to about 12 deg, so the drone lands nearly level.
+- A touchdown while sliding sideways counts as a landing, not a crash.
+- The task box says when the assist is slowing your descent.
+
+Many consumer drones have a similar landing protection feature. Turn it off to practise real landings. It cannot help if you disarm in the air or fly into an obstacle.
+
 After a crash, a notice gives the reason. Press R to reset.
 
 Battery: the default endurance is about 10 minutes of hover. Hard flying drains it faster. The reading turns red below 20 percent. At 0 percent the drone lands by itself. The flight plan window lets you set a different endurance.
@@ -182,7 +191,9 @@ Suggested progression:
 
 ## 10. Sensors and obstacle avoidance
 
-**Range display.** The triangle is the drone, nose up. Four arcs show the distance to the nearest surface in front, behind, left, and right. Each direction uses a fan of three ultrasonic beams with 6 m reach. Green is beyond 3 m. Amber is 1.5 to 3 m. Red is under 1.5 m. No arc means nothing within range.
+**Range display.** The triangle is the drone, nose up. Four arcs show the distance to the nearest surface in front, behind, left, and right. Each direction uses a fan of five ultrasonic beams with 6 m reach, wide enough to cover the diagonals. Green is beyond 3 m. Amber is 1.5 to 3 m. Red is under 1.5 m. No arc means nothing within range.
+
+**Range up.** An upward ranger with 6 m reach. It sees the tree canopy, roof edges, and anything else above the drone.
 
 **Range down.** A downward ranger with 8 m reach. It points along the body axis, so it reads long when the drone is tilted, as a real one does. It also sees the tops of obstacles.
 
@@ -201,6 +212,8 @@ Suggested progression:
 - The allowed speed toward a surface shrinks as you approach and reaches zero at 2 m.
 - Closer than 2 m, the drone backs away gently.
 - Between two surfaces, such as the 3.2 m gate, it centers itself.
+- Climbing stops 1.5 m below anything overhead, such as the tree canopy.
+- Descending stops 1.2 m above an obstacle. Move clear of it before you land. Descent to open ground is never blocked.
 - The task box says when avoidance is limiting you.
 
 In altitude hold and stabilized modes you get a warning only. Those modes are for learning without assistance.
@@ -422,6 +435,7 @@ Nothing is sent anywhere. Plans and imported images are not saved. Export your p
 | A stick moves the wrong way | Tick Invert for that channel in Controller setup |
 | Throttle behaves oddly with an RC transmitter | Clear "Throttle stick springs back to center" |
 | The drone climbs or sinks in stabilized mode | That is expected. Nothing holds height in this mode. Hold hover throttle and correct by eye |
+| The drone refuses to sink fast near the ground | Landing assist is limiting the descent. Untick it in the Sensors section to practise unassisted landings |
 | The drone slows by itself near objects | Obstacle avoidance is limiting speed. Untick it in the Sensors section |
 | KMZ or GeoTIFF import fails | These need internet to fetch a helper library. Check the connection or a script blocker |
 | The imported image is the wrong size | It is not georeferenced. Type its width or use two-point scaling |
