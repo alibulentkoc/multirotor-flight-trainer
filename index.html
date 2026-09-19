@@ -110,7 +110,7 @@ button, select{
 }
 button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 button[aria-pressed="true"]{background:var(--ink); color:var(--panel)}
-button:disabled{opacity:.45; cursor:default}
+button:disabled, button[aria-disabled="true"]{opacity:.45; cursor:default}
 .row{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:8px}
 .modehint{font-size:14px; color:var(--muted); margin:8px 0 0; min-height:38px}
 .drills{display:grid; gap:6px}
@@ -166,7 +166,7 @@ td:last-child,th:last-child{text-align:right}
         <canvas id="map" width="840" height="840" aria-label="Top-down planning map, north up"></canvas>
         <div class="row3"><button id="pgUndo">Undo point</button><button id="pgClear">Clear</button><button id="pgWhole">Whole field</button></div>
         <div class="row3"><button id="pgIn">Zoom in</button><button id="pgOut">Zoom out</button><button id="pgFit">Fit to plan</button></div>
-        <div class="row3" style="grid-template-columns:1fr"><button id="pgHome" aria-pressed="false">Set home</button></div>
+        <div class="row3" style="grid-template-columns:1fr"><button id="pgHome" aria-pressed="false" aria-disabled="true" aria-describedby="homeMsg">Set home</button></div>
         <p class="note" id="homeMsg" role="status" style="margin:4px 0 0"></p>
         <p class="note" id="planHelp"></p>
         <p class="note">North is up. H is the home point where you stand. With your own field loaded, "Set home" followed by a click on the map moves it. The yellow line is the track actually flown, and green dots are photos taken.</p>
@@ -1221,17 +1221,20 @@ function shiftHome(s, hx, hz){
 var HOME_MSG = {
   arm: 'Click the map where you will stand and take off. Press Esc or the button again to cancel.',
   cancel: 'Set home cancelled. Home has not moved.',
-  practice: 'Home is fixed on the practice field. Load a field image or import a plan first.',
+  practice: 'Home is fixed on the practice field. Load a field image or import a plan, and you can move it.',
   flying: 'Land and disarm before moving home.',
   moved: 'Home moved. The drone now sits at the new home.'
 };
+// Home can move only on the user's own field: a loaded field image, or an imported (georeferenced) plan.
+function homeAvailable(st){ return !!(st.hasField || st.hasGeo); }
 function homeDecision(st){
   if (st.picking) return { action: 'cancel', msg: HOME_MSG.cancel };
-  if (!st.hasField && !st.hasGeo) return { action: 'refuse', msg: HOME_MSG.practice };
+  if (!homeAvailable(st)) return { action: 'refuse', msg: HOME_MSG.practice };
   if (st.armed || !st.onGround) return { action: 'refuse', msg: HOME_MSG.flying };
   return { action: 'arm', msg: HOME_MSG.arm };
 }
-function geoNote(msg){ $('geoStatus').textContent = msg || (geo ? 'Georeferenced. Home point: ' + geo.lat0.toFixed(6) + ', ' + geo.lon0.toFixed(6) + '.' : 'Not georeferenced. Exports use local meters east and north of home.'); }
+// geoNote runs after every change of field image or georeference, so it also refreshes the "Set home" button
+function geoNote(msg){ $('geoStatus').textContent = msg || (geo ? 'Georeferenced. Home point: ' + geo.lat0.toFixed(6) + ', ' + geo.lon0.toFixed(6) + '.' : 'Not georeferenced. Exports use local meters east and north of home.'); refreshHome(); }
 CAMERAS.forEach(function(c, i){ var o = document.createElement('option'); o.value = i; o.textContent = c.n; $('pCam').appendChild(o); });
 $('pCam').value = 1;
 
@@ -1345,9 +1348,15 @@ map.addEventListener('pointerup', function(e){
 // --- set home: a one-shot map click. Home stays the sim origin, so the field, plan, track, and georeference shift instead (see shiftHome) ---
 // The decision itself is the pure homeDecision above. A press or click always ends in a visible message, even if something throws.
 function homeState(picking){ var tel = sim.telemetry(); return { picking: picking, hasField: fieldMode, hasGeo: !!geo, armed: tel.armed, onGround: tel.on_ground }; }
+// While home cannot move (practice field), the button looks disabled and the reason stays in the note. A press still answers, in red.
 function setHomePick(on, msg, warn){
-  homePick = on; $('pgHome').setAttribute('aria-pressed', on ? 'true' : 'false'); map.style.cursor = on ? 'cell' : '';
-  $('homeMsg').textContent = msg || ''; $('homeMsg').className = warn ? 'note warn' : 'note';
+  var ok = homeAvailable({ hasField: fieldMode, hasGeo: !!geo });
+  homePick = on; $('pgHome').setAttribute('aria-pressed', on ? 'true' : 'false'); $('pgHome').setAttribute('aria-disabled', ok ? 'false' : 'true'); map.style.cursor = on ? 'cell' : '';
+  $('homeMsg').textContent = msg || (ok ? '' : HOME_MSG.practice); $('homeMsg').className = warn ? 'note warn' : 'note';
+}
+function refreshHome(){
+  var ok = homeAvailable({ hasField: fieldMode, hasGeo: !!geo }), stale = $('homeMsg').textContent === HOME_MSG.practice;
+  if (!ok) setHomePick(false); else if (stale) setHomePick(homePick); else $('pgHome').setAttribute('aria-disabled', 'false');
 }
 function homeFail(err){ setHomePick(false, 'Set home failed: ' + (err && err.message ? err.message : err) + '. Please report this message.', true); }
 function moveHome(hx, hz){

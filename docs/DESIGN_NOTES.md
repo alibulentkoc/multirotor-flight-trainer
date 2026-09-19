@@ -69,6 +69,7 @@ Home is the sim origin, the pilot stands at (0, 1.6, 7), and return-to-home, the
 - The map view center shifts by the same offset, so the map does not jump under the cursor.
 - The aircraft is reset through `startDrill`, the same path the R key uses. That also clears `sim.photos`, so photo marks do not survive a home move. The flown track does, because the app owns it.
 - The arm, cancel, or refuse decision is the pure `homeDecision(st)` in the tested range, with its texts in `HOME_MSG`. Every outcome carries a message, and the button and map-click handlers catch exceptions and show them in the note, so a press can never do nothing silently.
+- `homeAvailable(st)` (field image or georeference) drives the button's look. When it is false the button carries `aria-disabled="true"` (greyed out by CSS) and the reason stays in the note. It is not a real `disabled` attribute, so a press still answers with the red refusal. `geoNote()` calls `refreshHome()`, because every change of field image or georeference already ends in `geoNote()`.
 - Moving home is refused while armed or airborne (read from `telemetry()`), and on the built-in practice field, where the scenery, colliders, drills, and forage truth layer are fixed around the origin. It is allowed when a field image is loaded or a georeference exists.
 
 ## Next structural step

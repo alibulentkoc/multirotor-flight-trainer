@@ -99,17 +99,20 @@ function shiftHome(s, hx, hz){
 var HOME_MSG = {
   arm: 'Click the map where you will stand and take off. Press Esc or the button again to cancel.',
   cancel: 'Set home cancelled. Home has not moved.',
-  practice: 'Home is fixed on the practice field. Load a field image or import a plan first.',
+  practice: 'Home is fixed on the practice field. Load a field image or import a plan, and you can move it.',
   flying: 'Land and disarm before moving home.',
   moved: 'Home moved. The drone now sits at the new home.'
 };
+// Home can move only on the user's own field: a loaded field image, or an imported (georeferenced) plan.
+function homeAvailable(st){ return !!(st.hasField || st.hasGeo); }
 function homeDecision(st){
   if (st.picking) return { action: 'cancel', msg: HOME_MSG.cancel };
-  if (!st.hasField && !st.hasGeo) return { action: 'refuse', msg: HOME_MSG.practice };
+  if (!homeAvailable(st)) return { action: 'refuse', msg: HOME_MSG.practice };
   if (st.armed || !st.onGround) return { action: 'refuse', msg: HOME_MSG.flying };
   return { action: 'arm', msg: HOME_MSG.arm };
 }
-function geoNote(msg){ $('geoStatus').textContent = msg || (geo ? 'Georeferenced. Home point: ' + geo.lat0.toFixed(6) + ', ' + geo.lon0.toFixed(6) + '.' : 'Not georeferenced. Exports use local meters east and north of home.'); }
+// geoNote runs after every change of field image or georeference, so it also refreshes the "Set home" button
+function geoNote(msg){ $('geoStatus').textContent = msg || (geo ? 'Georeferenced. Home point: ' + geo.lat0.toFixed(6) + ', ' + geo.lon0.toFixed(6) + '.' : 'Not georeferenced. Exports use local meters east and north of home.'); refreshHome(); }
 CAMERAS.forEach(function(c, i){ var o = document.createElement('option'); o.value = i; o.textContent = c.n; $('pCam').appendChild(o); });
 $('pCam').value = 1;
 
@@ -223,9 +226,15 @@ map.addEventListener('pointerup', function(e){
 // --- set home: a one-shot map click. Home stays the sim origin, so the field, plan, track, and georeference shift instead (see shiftHome) ---
 // The decision itself is the pure homeDecision above. A press or click always ends in a visible message, even if something throws.
 function homeState(picking){ var tel = sim.telemetry(); return { picking: picking, hasField: fieldMode, hasGeo: !!geo, armed: tel.armed, onGround: tel.on_ground }; }
+// While home cannot move (practice field), the button looks disabled and the reason stays in the note. A press still answers, in red.
 function setHomePick(on, msg, warn){
-  homePick = on; $('pgHome').setAttribute('aria-pressed', on ? 'true' : 'false'); map.style.cursor = on ? 'cell' : '';
-  $('homeMsg').textContent = msg || ''; $('homeMsg').className = warn ? 'note warn' : 'note';
+  var ok = homeAvailable({ hasField: fieldMode, hasGeo: !!geo });
+  homePick = on; $('pgHome').setAttribute('aria-pressed', on ? 'true' : 'false'); $('pgHome').setAttribute('aria-disabled', ok ? 'false' : 'true'); map.style.cursor = on ? 'cell' : '';
+  $('homeMsg').textContent = msg || (ok ? '' : HOME_MSG.practice); $('homeMsg').className = warn ? 'note warn' : 'note';
+}
+function refreshHome(){
+  var ok = homeAvailable({ hasField: fieldMode, hasGeo: !!geo }), stale = $('homeMsg').textContent === HOME_MSG.practice;
+  if (!ok) setHomePick(false); else if (stale) setHomePick(homePick); else $('pgHome').setAttribute('aria-disabled', 'false');
 }
 function homeFail(err){ setHomePick(false, 'Set home failed: ' + (err && err.message ? err.message : err) + '. Please report this message.', true); }
 function moveHome(hx, hz){

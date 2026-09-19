@@ -250,7 +250,7 @@ Open it with the "Open flight plan" button or the P key. It floats over the 3D v
 | Whole field | Make the survey area cover the whole loaded image |
 | Zoom in / Zoom out | Change the map scale |
 | Fit to plan | Frame the home point, image, and plan |
-| Set home | Move the home point. Press it, then click the map where you will stand and take off. See section 15 |
+| Set home | Move the home point on your own field. Press it, then click the map where you will stand and take off. Greyed out on the practice field, where home is fixed. See section 15 |
 
 Click the map to add a point. Drag an existing point to move it.
 
@@ -368,7 +368,12 @@ You can select several files at once, for example an image, its world file, and 
 
 **Georeference status.** A line under the file picker shows whether the plan is georeferenced and gives the home point latitude and longitude. Typing a new width or using two-point scaling makes the image a plain, non-georeferenced image again.
 
-**Where home goes.** Home is first set automatically:
+**The home point: fixed on the practice field, movable on your own field.**
+
+- On the built-in practice field, home is fixed at the orange pad. The barn, bales, tree, gate, and drills are all laid out around it. The "Set home" button is greyed out, and the note under it says why.
+- On your own field, home is movable. As soon as you load a field image or import a plan (KML, KMZ, GeoJSON, CSV, or GeoTIFF), the "Set home" button becomes active. "Remove field image" returns to the practice field, and the button greys out again.
+
+**Where home goes.** On your own field, home is first set automatically:
 
 - With an image: 6 m south of the middle of the image's south edge.
 - With only a boundary: 6 m south of its southernmost point.
@@ -388,7 +393,7 @@ What happens:
 - The plan is recomputed. The flight lines stay the same, but the pattern may now start from the other end, because it starts from the end nearer to home. Path length, time, and the line-of-sight warning are updated.
 - The drone is reset with a full battery. Green photo dots from an earlier flight are cleared.
 
-"Set home" works when your own field image is loaded or a georeferenced plan has been imported. On the built-in practice field, home is fixed at the pad. Typing a new image width or using two-point scaling places the image north of home again and clears the plan.
+If you press the greyed-out button on the practice field, the note turns red and repeats the reason. Nothing else happens. Typing a new image width or using two-point scaling places the image north of home again and clears the plan.
 
 **Import limits.**
 
@@ -456,7 +461,8 @@ Nothing is sent anywhere. Plans and imported images are not saved. Export your p
 | The imported image is the wrong size | It is not georeferenced. Type its width or use two-point scaling |
 | The KML boundary does not line up with the image | The image is a plain screenshot. Import the overlay as KMZ or GeoTIFF |
 | Export KML is refused | The plan has no latitude and longitude. Import georeferenced data, or use CSV |
-| "Set home" is refused | Land and disarm first. On the built-in practice field, home is fixed: load a field image or import a plan |
+| "Set home" is greyed out | You are on the built-in practice field, where home is fixed. Load a field image or import a plan |
+| "Set home" is refused with a red note | Land and disarm first |
 | Text looks wider than expected | The display font could not load. The tool still works |
 
 ## 20. Known limits

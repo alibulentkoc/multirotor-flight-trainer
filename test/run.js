@@ -73,6 +73,9 @@ test('home shift does not modify its input and keeps the survey the same', funct
   assert.strictEqual(JSON.stringify(HA), copy); var A = areaPlan(HA), B = areaPlan(s.poly); assert.strictEqual(B.lines.length, A.lines.length); assert.strictEqual(B.shots.length, A.shots.length); assert(Math.abs(B.area/A.area - 1) < 1e-4, 'area ratio ' + B.area/A.area); }); // re-anchoring the tangent plane rescales local meters by a few ppm
 var HS = function(o){ return Object.assign({ picking: false, hasField: true, hasGeo: false, armed: false, onGround: true }, o || {}); };
 test('set home: arms with a field image or a georeference, landed and disarmed', function(){ assert.strictEqual(G.homeDecision(HS()).action, 'arm'); assert.strictEqual(G.homeDecision(HS({ hasField: false, hasGeo: true })).action, 'arm'); });
+test('set home: available only with a field image or an imported plan (the button looks disabled otherwise)', function(){
+  assert.strictEqual(G.homeAvailable({ hasField: false, hasGeo: false }), false); assert.strictEqual(G.homeAvailable({ hasField: true, hasGeo: false }), true); assert.strictEqual(G.homeAvailable({ hasField: false, hasGeo: true }), true);
+  [true, false].forEach(function(f){ [true, false].forEach(function(g){ var st = HS({ hasField: f, hasGeo: g }); assert.strictEqual(G.homeDecision(st).action === 'arm', G.homeAvailable(st)); }); }); });
 test('set home: refused on the practice field, while armed, and in the air', function(){
   var a = G.homeDecision(HS({ hasField: false })), b = G.homeDecision(HS({ armed: true })), c = G.homeDecision(HS({ onGround: false }));
   assert.strictEqual(a.action, 'refuse'); assert.strictEqual(a.msg, G.HOME_MSG.practice); assert.strictEqual(b.action, 'refuse'); assert.strictEqual(b.msg, G.HOME_MSG.flying); assert.strictEqual(c.action, 'refuse'); assert.strictEqual(c.msg, G.HOME_MSG.flying); });

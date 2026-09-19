@@ -24,7 +24,7 @@
         <canvas id="map" width="840" height="840" aria-label="Top-down planning map, north up"></canvas>
         <div class="row3"><button id="pgUndo">Undo point</button><button id="pgClear">Clear</button><button id="pgWhole">Whole field</button></div>
         <div class="row3"><button id="pgIn">Zoom in</button><button id="pgOut">Zoom out</button><button id="pgFit">Fit to plan</button></div>
-        <div class="row3" style="grid-template-columns:1fr"><button id="pgHome" aria-pressed="false">Set home</button></div>
+        <div class="row3" style="grid-template-columns:1fr"><button id="pgHome" aria-pressed="false" aria-disabled="true" aria-describedby="homeMsg">Set home</button></div>
         <p class="note" id="homeMsg" role="status" style="margin:4px 0 0"></p>
         <p class="note" id="planHelp"></p>
         <p class="note">North is up. H is the home point where you stand. With your own field loaded, "Set home" followed by a click on the map moves it. The yellow line is the track actually flown, and green dots are photos taken.</p>
