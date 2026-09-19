@@ -71,6 +71,15 @@ test('home shift without a georeference is a plain offset', function(){ var s = 
   assert(s.route[0].x === -25 && s.route[0].z === 120); assert(s.field.cx === -35 && s.field.cz === 74 && s.field.w === 200 && s.field.h === 120); });
 test('home shift does not modify its input and keeps the survey the same', function(){ var g0 = G.mkGeo(34.68, -82.84), copy = JSON.stringify(HA), s = G.shiftHome({ geo: g0, poly: HA }, -20, -60);
   assert.strictEqual(JSON.stringify(HA), copy); var A = areaPlan(HA), B = areaPlan(s.poly); assert.strictEqual(B.lines.length, A.lines.length); assert.strictEqual(B.shots.length, A.shots.length); assert(Math.abs(B.area/A.area - 1) < 1e-4, 'area ratio ' + B.area/A.area); }); // re-anchoring the tangent plane rescales local meters by a few ppm
+var HS = function(o){ return Object.assign({ picking: false, hasField: true, hasGeo: false, armed: false, onGround: true }, o || {}); };
+test('set home: arms with a field image or a georeference, landed and disarmed', function(){ assert.strictEqual(G.homeDecision(HS()).action, 'arm'); assert.strictEqual(G.homeDecision(HS({ hasField: false, hasGeo: true })).action, 'arm'); });
+test('set home: refused on the practice field, while armed, and in the air', function(){
+  var a = G.homeDecision(HS({ hasField: false })), b = G.homeDecision(HS({ armed: true })), c = G.homeDecision(HS({ onGround: false }));
+  assert.strictEqual(a.action, 'refuse'); assert.strictEqual(a.msg, G.HOME_MSG.practice); assert.strictEqual(b.action, 'refuse'); assert.strictEqual(b.msg, G.HOME_MSG.flying); assert.strictEqual(c.action, 'refuse'); assert.strictEqual(c.msg, G.HOME_MSG.flying); });
+test('set home: a second press cancels, whatever the aircraft state', function(){ assert.strictEqual(G.homeDecision(HS({ picking: true })).action, 'cancel'); assert.strictEqual(G.homeDecision(HS({ picking: true, armed: true, onGround: false, hasField: false })).action, 'cancel'); });
+test('set home: every outcome has a message, so a press is never silent', function(){
+  [true, false].forEach(function(p){ [true, false].forEach(function(f){ [true, false].forEach(function(g){ [true, false].forEach(function(a){ [true, false].forEach(function(og){
+    var d = G.homeDecision({ picking: p, hasField: f, hasGeo: g, armed: a, onGround: og }); assert(['arm', 'cancel', 'refuse'].indexOf(d.action) >= 0); assert(typeof d.msg === 'string' && d.msg.length > 10, JSON.stringify(d)); }); }); }); }); }); });
 
 // ---- build ----
 console.log('build');

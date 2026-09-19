@@ -377,7 +377,7 @@ You can select several files at once, for example an image, its world file, and 
 **Moving home.** Pick the spot where you would really stand, such as a field gate or a farm track:
 
 1. Land and disarm. Home cannot be moved while the drone is armed or in the air.
-2. Press "Set home" under the map. The button stays highlighted while it waits for your click.
+2. Press "Set home" under the map. The button stays highlighted, an orange "SET HOME" banner appears on the map, and the cursor changes while it waits for your click. Every press shows a note under the button: what to do next, that it was cancelled, or why it was refused (in red).
 3. Click the new home point on the map. Press Esc, or the button again, to cancel.
 
 What happens:

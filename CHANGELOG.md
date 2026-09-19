@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Movable home point. "Set home" in the flight plan window, followed by a click on the map, moves home. The field image, survey boundary, waypoints, flown track, and georeference shift together, so latitude and longitude do not change. The pilot and the drone move to the new home. Available with a loaded field image or an imported georeferenced plan, with the drone landed and disarmed.
+- "Set home" always answers a press: a note under the button (red when refused or failed), a banner on the map, and a changed cursor while it waits for the click.
 - "Whole field", "Fit to plan", and the map background follow the field image after a home move.
 - Internal: plan computation moved out of DOM code into a pure `planCompute`, with planner constants in named blocks (`PLAN_LIMITS`, `PLAN_TIMES`). Results are unchanged.
 - Tests added for plan computation (including the manual's worked example) and for the home shift.

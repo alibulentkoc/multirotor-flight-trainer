@@ -88,6 +88,7 @@ body.nopip .pip{display:none}
 .wpt button{padding:2px 8px; font-size:14px} .wpt td:last-child,.wpt th:last-child{text-align:right}
 #exportText{width:100%; height:110px; font:12px/1.3 Consolas,Menlo,monospace; color:var(--ink); background:var(--chip); border:1px solid var(--line); border-radius:4px; margin-top:4px}
 #exportText[hidden]{display:none}
+#homeMsg.warn{color:var(--warn); font-weight:600}
 #planWarn{color:var(--warn); font-weight:600; font-size:14px; margin:6px 0 0; min-height:18px}
 .gloss dt{font-weight:700; color:var(--ink); font-size:15px; margin-top:6px} .gloss dd{text-align:left; font-weight:400; margin:0; font-size:15px}
 .gloss{display:block}
@@ -1215,6 +1216,21 @@ function shiftHome(s, hx, hz){
     track: (s.track || []).map(function(p){ return mv(p[0], p[1]); }),
     field: s.field ? { w: s.field.w, h: s.field.h, cx: c[0], cz: c[1] } : null };
 }
+// What a press of "Set home", or the map click that follows it, should do. Every outcome carries a message, so a press is never silent.
+// st = { picking, hasField, hasGeo, armed, onGround }. Returns { action: 'arm' | 'cancel' | 'refuse', msg }.
+var HOME_MSG = {
+  arm: 'Click the map where you will stand and take off. Press Esc or the button again to cancel.',
+  cancel: 'Set home cancelled. Home has not moved.',
+  practice: 'Home is fixed on the practice field. Load a field image or import a plan first.',
+  flying: 'Land and disarm before moving home.',
+  moved: 'Home moved. The drone now sits at the new home.'
+};
+function homeDecision(st){
+  if (st.picking) return { action: 'cancel', msg: HOME_MSG.cancel };
+  if (!st.hasField && !st.hasGeo) return { action: 'refuse', msg: HOME_MSG.practice };
+  if (st.armed || !st.onGround) return { action: 'refuse', msg: HOME_MSG.flying };
+  return { action: 'arm', msg: HOME_MSG.arm };
+}
 function geoNote(msg){ $('geoStatus').textContent = msg || (geo ? 'Georeferenced. Home point: ' + geo.lat0.toFixed(6) + ', ' + geo.lon0.toFixed(6) + '.' : 'Not georeferenced. Exports use local meters east and north of home.'); }
 CAMERAS.forEach(function(c, i){ var o = document.createElement('option'); o.value = i; o.textContent = c.n; $('pCam').appendChild(o); });
 $('pCam').value = 1;
@@ -1303,6 +1319,7 @@ function drawMap(){
   mx.font = '600 16px Arial'; mx.textAlign = 'left'; mx.fillText(bar + ' m', 24, 807);
   mx.fillStyle = 'rgba(19,36,45,0.75)'; mx.fillRect(786, 14, 40, 46); mx.fillStyle = '#fff'; mx.textAlign = 'center'; mx.fillText('N', 806, 46);
   mx.beginPath(); mx.moveTo(806, 18); mx.lineTo(813, 32); mx.lineTo(799, 32); mx.closePath(); mx.fill();
+  if (homePick){ mx.fillStyle = 'rgba(217,80,10,0.92)'; mx.fillRect(140, 12, 560, 40); mx.fillStyle = '#fff'; mx.font = '700 20px Arial'; mx.textAlign = 'center'; mx.fillText('SET HOME: click the new home point', 420, 33); }
 }
 // map pointer: click adds a point, dragging an existing point moves it
 var drag = null;
@@ -1326,30 +1343,31 @@ map.addEventListener('pointerup', function(e){
   computePlan();
 });
 // --- set home: a one-shot map click. Home stays the sim origin, so the field, plan, track, and georeference shift instead (see shiftHome) ---
-function homeBlocked(){
-  var tel = sim.telemetry();
-  if (!fieldMode && !geo) return 'Home is fixed on the practice field. Load a field image or import a plan first.';
-  if (tel.armed || !tel.on_ground) return 'Land and disarm before moving home.';
-  return '';
+// The decision itself is the pure homeDecision above. A press or click always ends in a visible message, even if something throws.
+function homeState(picking){ var tel = sim.telemetry(); return { picking: picking, hasField: fieldMode, hasGeo: !!geo, armed: tel.armed, onGround: tel.on_ground }; }
+function setHomePick(on, msg, warn){
+  homePick = on; $('pgHome').setAttribute('aria-pressed', on ? 'true' : 'false'); map.style.cursor = on ? 'cell' : '';
+  $('homeMsg').textContent = msg || ''; $('homeMsg').className = warn ? 'note warn' : 'note';
 }
-function setHomePick(on, msg){
-  homePick = on; $('pgHome').setAttribute('aria-pressed', on ? 'true' : 'false');
-  $('homeMsg').textContent = msg || (on ? 'Click the map where you will stand and take off. Press Esc or the button again to cancel.' : '');
-}
+function homeFail(err){ setHomePick(false, 'Set home failed: ' + (err && err.message ? err.message : err) + '. Please report this message.', true); }
 function moveHome(hx, hz){
-  var why = homeBlocked(); if (why){ setHomePick(false, why); return; }
-  var s = shiftHome({ geo: geo, poly: poly, route: route, track: track, field: fieldRect }, hx, hz);
-  geo = s.geo; poly = s.poly; route = s.route; track = s.track; fieldRect = s.field;
-  if (fieldPlane) fieldPlane.position.set(fieldRect.cx, 0.03, fieldRect.cz);
-  view2d.cx -= hx; view2d.cz -= hz; // keep the map steady under the cursor
-  startDrill(drill.id); setHomePick(false, 'Home moved. The drone now sits at the new home.'); computePlan(); geoNote();
+  try {
+    var d = homeDecision(homeState(false)); if (d.action !== 'arm'){ setHomePick(false, d.msg, true); return; }
+    var s = shiftHome({ geo: geo, poly: poly, route: route, track: track, field: fieldRect }, hx, hz);
+    geo = s.geo; poly = s.poly; route = s.route; track = s.track; fieldRect = s.field;
+    if (fieldPlane) fieldPlane.position.set(fieldRect.cx, 0.03, fieldRect.cz);
+    view2d.cx -= hx; view2d.cz -= hz; // keep the map steady under the cursor
+    startDrill(drill.id); setHomePick(false, HOME_MSG.moved); computePlan(); geoNote();
+  } catch (err){ homeFail(err); }
 }
-$('pgHome').addEventListener('click', function(e){
-  e.target.blur(); if (homePick){ setHomePick(false); return; }
-  var why = homeBlocked(); if (why){ setHomePick(false, why); return; }
-  calib = null; $('calibBox').hidden = true; $('calibMsg').textContent = ''; setHomePick(true); drawMap();
+$('pgHome').addEventListener('click', function(){
+  try {
+    $('pgHome').blur(); var d = homeDecision(homeState(homePick));
+    if (d.action === 'arm'){ calib = null; $('calibBox').hidden = true; $('calibMsg').textContent = ''; }
+    setHomePick(d.action === 'arm', d.msg, d.action === 'refuse'); drawMap();
+  } catch (err){ homeFail(err); }
 });
-window.addEventListener('keydown', function(e){ if (e.code === 'Escape' && homePick) setHomePick(false); });
+window.addEventListener('keydown', function(e){ if (e.code === 'Escape' && homePick){ setHomePick(false, HOME_MSG.cancel); drawMap(); } });
 $('pgUndo').addEventListener('click', function(){ if (planMode === 'route') route.pop(); else poly.pop(); computePlan(); });
 $('pgClear').addEventListener('click', function(){ if (planMode === 'route') route = []; else poly = []; track = []; computePlan(); });
 $('pgWhole').addEventListener('click', function(){
