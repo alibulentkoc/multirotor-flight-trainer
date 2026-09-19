@@ -10,7 +10,8 @@ Node 18+. There are no dependencies, so there is nothing to install.
 
 ```
 npm test            # headless tests (node test/run.js)
-npm run build       # rebuild index.html from src/
+npm run build       # rebuild index.html from src/, then run build:docs
+npm run build:docs  # rebuild docs/manual/index.html from docs/USER_MANUAL.md (node tools/build-docs.js)
 npm run build:cdn   # dist/index.cdn.html, which loads three.js from cdnjs (dist/ is gitignored)
 ```
 
@@ -21,6 +22,7 @@ There is no test filter. To run a single test, temporarily comment out other `te
 - Edit `src/`, never `index.html`. Then run the tests, rebuild, and commit both `src/` and the rebuilt `index.html`. The last test rebuilds `index.html` and fails if it changed, so a stale build fails the tests. Running `npm test` also rewrites `index.html` as a side effect.
 - All authored text must be ASCII. `build.js` throws on any non-ASCII character in the output (CSS, template, and JS alike). Watch out for smart quotes, degree signs, em dashes, and similar characters.
 - Don't add frameworks or runtime dependencies. three.js r128 in `vendor/` is the only one. JSZip and geotiff.js load on demand from a CDN, only for KMZ and GeoTIFF import.
+- `docs/USER_MANUAL.md` is the source of the manual. `docs/manual/index.html` is generated from it by `tools/build-docs.js`. Never edit it by hand. After any change to the manual, run `npm run build:docs` (or `npm run build`) and commit both files. A test fails if the page is out of date. Unlike the `index.html` test, it does not rewrite the file.
 - `legacy/v0.1/index.html` is a frozen copy. Don't edit it.
 - Rendering and input have no automated tests, so changes there need a manual check in a browser.
 
@@ -30,12 +32,14 @@ There is no test filter. To run a single test, temporarily comment out other `te
 - Never edit `index.html` by hand. Edit files in `src/`, run `npm test`, run `npm run build`, and commit `src/` and `index.html` together.
 - Every new behavior in the sim, planner math, or parsers needs a test in `test/run.js`.
 - Work on a feature branch. Never push. The maintainer reviews and pushes.
-- Update `CHANGELOG.md` and `docs/USER_MANUAL.md` when user-visible behavior changes.
+- Update `CHANGELOG.md` and `docs/USER_MANUAL.md` when user-visible behavior changes. Never edit `docs/manual/index.html` by hand. It is generated from `docs/USER_MANUAL.md`, so rebuild it with `npm run build:docs` and commit it with the manual.
 - Keep scientific and modeling constants in named parameter blocks (such as `PARAMS` in `00-sim.js`), never buried in logic.
 
 ## Architecture
 
 **Build.** `build.js` concatenates every `src/js/*.js` file in file-name order into one script. It fills the `{{CSS}}`, `{{THREE}}`, and `{{APP}}` placeholders in `src/index.template.html`, and each placeholder must appear exactly once, on its own line.
+
+**Docs build.** `tools/build-docs.js` converts `docs/USER_MANUAL.md` into `docs/manual/index.html` with its own small Markdown converter (headings, paragraphs, bold, inline code, links, flat lists, tables, code fences, rules). Unsupported Markdown throws. The page takes its CSS from the `<style>` block of `docs/labs/index.html` at build time and loads the fonts from `../labs/fonts/`, so a style change on the labs index also changes the manual and needs a docs rebuild. Every heading gets an id, and the list under "Contents" is linked to the matching `##` headings. A Contents entry with no matching heading throws.
 
 **Shared scope, order-coupled fragments.** The v0.2 split into fragments was mechanical, not a real module system:
 - `00-sim.js` runs at global scope. It holds the flight model (`Sim`, `PARAMS`, quaternion helpers, controllers, missions, and telemetry) and has no DOM or three.js dependency, so it can be tested headless. Keep it that way.

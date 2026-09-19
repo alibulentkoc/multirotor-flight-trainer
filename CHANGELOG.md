@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Side panel: two small links under the title. "Labs" opens `docs/labs/index.html` in a new tab, and "Manual" opens `docs/USER_MANUAL.md` on GitHub. The README gains a "Labs" line pointing to the Pages site.
+- Side panel: two small links under the title. "Labs" opens `docs/labs/index.html` and "Manual" opens `docs/manual/index.html`, both in a new tab. The README gains a "Labs" line pointing to the Pages site.
+- The manual is now a web page, `docs/manual/index.html`, styled like the lab pages (same CSS, fonts loaded from `docs/labs/fonts/`, dark mode, print rules). Every section heading has an id, and the Contents list links to the sections. The top bar has a "Labs" link and the "Open the trainer" button. The README links to the page on the Pages site and keeps a link to the Markdown source.
+- Internal: `tools/build-docs.js`, a dependency-free Markdown converter, generates the manual page from `docs/USER_MANUAL.md`. New script `npm run build:docs`, and `npm run build` runs it too. Tests added for the converter, and one that fails when the page is out of date.
 - Lab 7 (Flying in wind): step 4 and the closing question reworded. Ground speed reads about zero while Airspeed reads less than the 5 m/s slider value, because wind is weaker near the ground. Changed in `docs/LABS.md`, `docs/labs/all.html`, and both Lab 7 files.
 - Movable home point. "Set home" in the flight plan window, followed by a click on the map, moves home. The field image, survey boundary, waypoints, flown track, and georeference shift together, so latitude and longitude do not change. The pilot and the drone move to the new home. Available with a loaded field image or an imported georeferenced plan, with the drone landed and disarmed.
 - "Set home" always answers a press: a note under the button (red when refused or failed), a banner on the map, and a changed cursor while it waits for the click.

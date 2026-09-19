@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<!-- Generated from docs/USER_MANUAL.md by tools/build-docs.js. Do not edit by hand. Run: npm run build:docs -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multirotor Flight Trainer: User Manual</title>
+<link rel="preload" href="../labs/fonts/LM-regular.woff2" as="font" type="font/woff2" crossorigin>
+<style>@font-face{font-family:"Latin Modern";font-style:normal;font-weight:400;font-display:swap;src:url("../labs/fonts/LM-regular.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:italic;font-weight:400;font-display:swap;src:url("../labs/fonts/LM-italic.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:normal;font-weight:700;font-display:swap;src:url("../labs/fonts/LM-bold.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:italic;font-weight:700;font-display:swap;src:url("../labs/fonts/LM-bold-italic.woff2") format("woff2")}
+:root{--bg:#f4f3ef;--paper:#fffffc;--ink:#111111;--muted:#555555;--line:#111111;--soft:#cfcdc6;--accent:#8a2b06;--chip:#f1efe8;--ok:#1d5e3c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15171a;--paper:#1c1f23;--ink:#e9e6df;--muted:#a9a59b;--line:#e9e6df;--soft:#3a3e44;--accent:#f0a27c;--chip:#24282d;--ok:#7fcfa4}}
+:root[data-theme="dark"]{--bg:#15171a;--paper:#1c1f23;--ink:#e9e6df;--muted:#a9a59b;--line:#e9e6df;--soft:#3a3e44;--accent:#f0a27c;--chip:#24282d;--ok:#7fcfa4}
+*{box-sizing:border-box}
+html{font-size:20px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Latin Modern","Latin Modern Roman","CMU Serif","Computer Modern Serif",Georgia,"Times New Roman",serif;line-height:1.45;
+  text-rendering:optimizeLegibility;font-kerning:normal;font-variant-ligatures:common-ligatures}
+.top{max-width:720px;margin:0 auto;padding:14px 8px 0;display:flex;gap:16px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;font-size:.85rem}
+.top a{color:var(--ink);text-decoration:none}
+.top .brand{font-variant:small-caps;letter-spacing:.04em}
+.btn{border:1px solid var(--ink);padding:4px 14px;font-weight:700}
+.btn:hover{background:var(--ink);color:var(--paper) !important}
+main{max-width:720px;margin:14px auto 40px;background:var(--paper);border:1px solid var(--soft);padding:52px 64px 48px}
+h1{font-size:1.72rem;font-weight:400;line-height:1.2;text-align:center;margin:0 0 .35rem}
+.level{text-align:center;font-style:italic;color:var(--muted);margin-bottom:1.6rem}
+h2{font-size:1.25rem;font-weight:700;margin:2rem 0 .5rem}
+p{margin:.9rem 0 .3rem;text-align:justify;hyphens:auto}
+ol,ul{margin:.25rem 0 .9rem;padding-left:1.7rem} li{margin:.28rem 0;text-align:left}
+strong{font-weight:700}
+hr{border:0;border-top:1px solid var(--soft);margin:1.5rem 0}
+a{color:var(--accent)}
+pre{background:var(--chip);border:1px solid var(--soft);padding:10px 14px;overflow-x:auto;font:.72rem/1.5 "Latin Modern Mono","CMU Typewriter Text","Courier New",monospace}
+.scroll{overflow-x:auto}
+/* booktabs-style tables: heavy top and bottom rules, light mid rule, no vertical lines */
+table{border-collapse:collapse;margin:.9rem auto;font-size:.92rem;border-top:2px solid var(--line);border-bottom:2px solid var(--line)}
+th,td{padding:.32rem .9rem;text-align:left;vertical-align:middle;border:0}
+thead th{border-bottom:1px solid var(--line);font-weight:700}
+tbody tr:first-child td{padding-top:.45rem}
+td:empty{min-width:3.4rem;height:2rem;border-bottom:1px dotted var(--muted)}
+.calm{border-left:3px solid var(--ink);padding:.1rem 0 .1rem 1rem;margin:1rem 0;font-style:italic;color:var(--muted)}
+.calm ul{margin:0;padding-left:1.1rem;list-style:none} .calm li{margin:.15rem 0} .calm strong{font-style:normal;color:var(--ink)}
+details.keys{margin:1rem 0} details.keys summary{cursor:pointer;font-variant:small-caps;letter-spacing:.03em;color:var(--muted)}
+nav.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:.4rem;font-size:.9rem;font-style:italic}
+input[type=checkbox]{width:1.05rem;height:1.05rem;accent-color:var(--ok);vertical-align:middle}
+input.score{width:3.6rem;font:inherit;padding:1px 6px;border:0;border-bottom:1px solid var(--muted);background:transparent;color:var(--ink);text-align:center}
+.done-row td{color:var(--muted)} .done-row a{color:var(--muted)}
+.note{color:var(--muted);font-size:.85rem;font-style:italic;text-align:center}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:760px){html{font-size:18px} main{margin:10px 0 0;border-left:0;border-right:0;padding:30px 22px} p{text-align:left}}
+@media print{.top,nav.foot,details.keys{display:none} html{font-size:11pt} body{background:#fff} main{border:0;margin:0;max-width:none;padding:0} .labpage{page-break-after:always}}
+.top .nav{display:flex;gap:16px;align-items:baseline}
+h2,h3{scroll-margin-top:12px}
+h3{font-size:1.05rem;font-weight:700;margin:1.5rem 0 .4rem}
+code{font:.85em "Latin Modern Mono","CMU Typewriter Text","Courier New",monospace;background:var(--chip);padding:0 .2em}
+pre code{font:inherit;background:none;padding:0}
+ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
+@media (max-width:760px){ol.toc{columns:1}}
+@media print{h2,h3{break-after:avoid} tr,pre{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="index.html">Multirotor Flight Trainer: User Manual</a><span class="nav"><a href="../labs/index.html">Labs</a><a class="btn" href="../../index.html" target="_blank" rel="noopener">Open the trainer</a></span></div>
+<main>
+<h1 id="multirotor-flight-trainer-user-manual">Multirotor Flight Trainer: User Manual</h1>
+<p>This manual covers the browser-based multirotor flight trainer (index.html). It explains how to fly, how to use the sensors, how to plan and fly a survey, and how to bring in your own field.</p>
+<h2 id="contents">Contents</h2>
+<ol class="toc">
+<li><a href="#1-what-this-tool-is">What this tool is</a></li>
+<li><a href="#2-requirements-and-start-up">Requirements and start-up</a></li>
+<li><a href="#3-screen-layout">Screen layout</a></li>
+<li><a href="#4-controls">Controls</a></li>
+<li><a href="#5-flight-modes">Flight modes</a></li>
+<li><a href="#6-your-first-flight">Your first flight</a></li>
+<li><a href="#7-crashes-battery-and-reset">Crashes, battery, and reset</a></li>
+<li><a href="#8-drills-and-scoring">Drills and scoring</a></li>
+<li><a href="#9-instruments">Instruments</a></li>
+<li><a href="#10-sensors-and-obstacle-avoidance">Sensors and obstacle avoidance</a></li>
+<li><a href="#11-wind-light-and-camera-views">Wind, light, and camera views</a></li>
+<li><a href="#12-flight-plan-window">Flight plan window</a></li>
+<li><a href="#13-survey-area-mode">Survey area mode</a></li>
+<li><a href="#14-waypoint-route-mode">Waypoint route mode</a></li>
+<li><a href="#15-importing-your-own-field">Importing your own field</a></li>
+<li><a href="#16-flying-a-plan">Flying a plan</a></li>
+<li><a href="#17-exporting-a-plan">Exporting a plan</a></li>
+<li><a href="#18-saved-data">Saved data</a></li>
+<li><a href="#19-troubleshooting">Troubleshooting</a></li>
+<li><a href="#20-known-limits">Known limits</a></li>
+<li><a href="#21-quick-reference-card">Quick reference card</a></li>
+</ol>
+<hr>
+<h2 id="1-what-this-tool-is">1. What this tool is</h2>
+<p>A flight simulator and mission planner that runs entirely in a web browser. Nothing is installed. No account is needed. No hardware is needed.</p>
+<p>It teaches three things:</p>
+<ul>
+<li>Stick skills: hover, orientation, circuits, and landing, from the pilot's line-of-sight view.</li>
+<li>Sensor awareness: range finders, cameras, light, and wind, and what they do to the aircraft.</li>
+<li>Survey planning: altitude, overlap, ground sample distance, flight lines, and waypoints, on a generic field or on your own field image.</li>
+</ul>
+<p>The flight physics run inside the page at 250 steps per second. The model is a generic 450 mm class quadcopter of 1.2 kg. It is not tuned to any specific commercial drone.</p>
+<h2 id="2-requirements-and-start-up">2. Requirements and start-up</h2>
+<ul>
+<li>A current desktop browser: Chrome, Edge, Firefox, or Safari. WebGL must be enabled.</li>
+<li>A keyboard is enough. A USB game controller or RC transmitter is better.</li>
+<li>Internet is needed only for three optional things: the display font, KMZ import, and GeoTIFF import. Everything else works offline.</li>
+</ul>
+<p>To start, open index.html in the browser, or open the GitHub Pages address. The drone sits on the orange ring (the home pad). You stand 7 m south of it, looking north.</p>
+<h2 id="3-screen-layout">3. Screen layout</h2>
+<p><strong>3D view (left).</strong> The flying field. Three status boxes sit at the top:</p>
+<ul>
+<li>Arm status: Disarmed, Armed, Taking off, Landing, or Crashed.</li>
+<li>Task box: the current drill, instructions, timers, and warnings.</li>
+<li>View: which camera you are using.</li>
+</ul>
+<p>Two on-screen sticks sit at the bottom corners. They show your current stick input from any source. You can also drag them with a mouse or a finger.</p>
+<p>Two inset pictures at the top right show the drone's front camera and down camera.</p>
+<p><strong>Side panel (right).</strong> Under the title, two small links open in a new tab: &quot;Labs&quot; (the lab sheets) and &quot;Manual&quot; (this manual). Then, from top to bottom: flight mode, action buttons, drills, instruments, sensors, conditions and view, keyboard help, controller setup, and results.</p>
+<h2 id="4-controls">4. Controls</h2>
+<p>All control layouts follow Mode 2, the most common RC layout. The left stick is throttle and yaw. The right stick is pitch and roll.</p>
+<h3 id="keyboard">Keyboard</h3>
+<div class="scroll"><table>
+<thead>
+<tr><th>Key</th><th>Action</th></tr>
+</thead>
+<tbody>
+<tr><td>W / S</td><td>Throttle up / down (left stick)</td></tr>
+<tr><td>A / D</td><td>Yaw left / right (left stick)</td></tr>
+<tr><td>Up / Down arrow</td><td>Pitch forward / back (right stick)</td></tr>
+<tr><td>Left / Right arrow</td><td>Roll left / right (right stick)</td></tr>
+<tr><td>Shift (hold)</td><td>Full stick deflection. Without Shift, keys give 70 percent</td></tr>
+<tr><td>Space</td><td>Arm or disarm</td></tr>
+<tr><td>T</td><td>Automatic take off</td></tr>
+<tr><td>L</td><td>Automatic land</td></tr>
+<tr><td>1, 2, 3</td><td>Position hold, altitude hold, stabilized</td></tr>
+<tr><td>C</td><td>Change camera view</td></tr>
+<tr><td>P</td><td>Open or close the flight plan window</td></tr>
+<tr><td>R</td><td>Reset to the home pad and restart the current drill</td></tr>
+</tbody>
+</table></div>
+<p>Keyboard input ramps up and down smoothly, so a short tap gives a small input.</p>
+<h3 id="on-screen-sticks">On-screen sticks</h3>
+<p>Drag the knob inside either circle. Both sticks spring back to center when released.</p>
+<h3 id="game-controller-or-rc-transmitter">Game controller or RC transmitter</h3>
+<ol>
+<li>Plug the controller into USB. Move any stick so the browser detects it.</li>
+<li>Open &quot;Controller setup&quot; in the side panel.</li>
+<li>For each channel (throttle, yaw, pitch, roll), pick the axis number that moves the live bar.</li>
+<li>Stick up and stick right must fill the bar. If a bar moves the wrong way, tick Invert.</li>
+<li>If your throttle stick does not spring back to center (a real RC transmitter), clear the box &quot;Throttle stick springs back to center&quot;.</li>
+</ol>
+<p>The mapping is remembered in the browser. Controller input has a small dead zone and an exponential curve for fine control near center.</p>
+<h2 id="5-flight-modes">5. Flight modes</h2>
+<div class="scroll"><table>
+<thead>
+<tr><th>Mode</th><th>What the sticks do</th><th>What the drone does for you</th><th>Use it for</th></tr>
+</thead>
+<tbody>
+<tr><td>Position hold</td><td>Command speed: up to 4 m/s sideways, 1.5 m/s up or down</td><td>Stops and holds position and height when you let go. Fights wind</td><td>First flights, camera-drone feel, flying plans</td></tr>
+<tr><td>Altitude hold</td><td>Right stick commands tilt (up to 30 deg). Left stick commands climb rate</td><td>Holds height only. It drifts until you level it and brake</td><td>Learning momentum and braking</td></tr>
+<tr><td>Stabilized</td><td>Right stick commands tilt. Left stick is raw throttle</td><td>Self-levels only. Nothing holds height or position</td><td>The core manual skill that transfers to any multirotor</td></tr>
+</tbody>
+</table></div>
+<p>Notes on stabilized mode:</p>
+<ul>
+<li>With a spring-centered throttle (keyboard or game controller), center stick equals hover thrust. Push up to climb, pull down to descend.</li>
+<li>With an RC transmitter throttle, the stick position sets thrust directly. Hover is near mid-stick.</li>
+<li>Thrust is not corrected for tilt. When you lean the drone, it sinks unless you add throttle. This is realistic.</li>
+</ul>
+<p>Yaw rate is up to 120 deg/s in all modes.</p>
+<h2 id="6-your-first-flight">6. Your first flight</h2>
+<ol>
+<li>Leave the mode on Position hold.</li>
+<li>Press T. The drone arms, climbs to 1.2 m, and hovers.</li>
+<li>Tap the Up arrow. It moves away from you. Let go. It stops.</li>
+<li>Try Left and Right arrows, then W and S for height.</li>
+<li>Press A or D to yaw. Turn the nose toward you and notice that roll and pitch now feel reversed. This is the main orientation problem in line-of-sight flying.</li>
+<li>Fly back over the pad. Press L to land. The drone descends, touches down, and disarms.</li>
+</ol>
+<p>Manual take off: press Space to arm, then raise the throttle. Manual landing: descend slowly to the ground, hold throttle down, then press Space to disarm.</p>
+<p>Front of the drone: orange arms, orange nose block, orange propellers. Rear: dark arms and a white tail mark.</p>
+<p>The dark spot on the ground is the drone's shadow. It falls along the sun direction, not straight below, and it fades under cloud.</p>
+<h2 id="7-crashes-battery-and-reset">7. Crashes, battery, and reset</h2>
+<p>A touchdown counts as a crash when any of these is true:</p>
+<ul>
+<li>Vertical speed above 2.2 m/s. Aim for under 1 m/s.</li>
+<li>Tilt above about 34 deg.</li>
+<li>Sideways speed above 2.5 m/s.</li>
+</ul>
+<p>Hitting the barn, the bales, the gate, or the tree is also a crash. Disarming in the air cuts the motors, and the drone falls.</p>
+<p><strong>Landing assist.</strong> On by default (Sensors section). It works in every flight mode, including stabilized:</p>
+<ul>
+<li>It caps the sink rate along a braking curve the motors can always hold. High up you can still descend fast. Near the ground the cap falls to about 0.35 m/s, so touchdown is soft even with the throttle fully down.</li>
+<li>Below 0.8 m it limits tilt to about 12 deg, so the drone lands nearly level.</li>
+<li>A touchdown while sliding sideways counts as a landing, not a crash.</li>
+<li>The task box says when the assist is slowing your descent.</li>
+</ul>
+<p>Many consumer drones have a similar landing protection feature. Turn it off to practise real landings. It cannot help if you disarm in the air or fly into an obstacle.</p>
+<p>After a crash, a notice gives the reason. Press R to reset.</p>
+<p>Battery: the default endurance is about 10 minutes of hover. Hard flying drains it faster. The reading turns red below 20 percent. At 0 percent the drone lands by itself. The flight plan window lets you set a different endurance.</p>
+<p>R (or the Reset button) puts the drone back on the pad with a full battery and restarts the selected drill.</p>
+<h2 id="8-drills-and-scoring">8. Drills and scoring</h2>
+<p>Pick a drill in the side panel. The timer starts when the drone rises above 0.3 m. Scores run from 0 to 100. A crash fails the attempt.</p>
+<div class="scroll"><table>
+<thead>
+<tr><th>Drill</th><th>Task</th><th>How it is scored</th></tr>
+</thead>
+<tbody>
+<tr><td>Free flight</td><td>No task</td><td>Not scored</td></tr>
+<tr><td>Hover box</td><td>Stay inside the 1.2 m box, centered 1.5 m above the pad, for a total of 15 s. Keep the tail toward you (heading within 25 deg of north). The box turns green while you are inside</td><td>100, minus 110 per meter of mean distance from the box center, minus 1.5 per second taken beyond 15 s</td></tr>
+<tr><td>Nose-in hover</td><td>Same box, but the nose must point at you (heading within 25 deg of south)</td><td>Same as hover box</td></tr>
+<tr><td>Square circuit</td><td>Fly through four markers in order at 1.5 m height. The active marker is orange, passed markers turn green. Keep the tail toward you</td><td>100, minus 1 per second over 25 s, minus 60 per meter of mean altitude error, minus 0.6 per degree of mean heading error</td></tr>
+<tr><td>Precision landing</td><td>Fly to the target 4 m east and 7 m north of the pad and land on it</td><td>100, minus 70 per meter from the center, minus 20 per m/s of touchdown speed above 0.5 m/s. More than 1.5 m away scores 0</td></tr>
+</tbody>
+</table></div>
+<p>Each result is logged with the flight mode and the wind setting. A high score in stabilized mode with wind means far more than the same score in position hold with calm air. The drill buttons show your best score.</p>
+<p>Suggested progression:</p>
+<ol>
+<li>All drills in position hold, no wind.</li>
+<li>Hover box and precision landing in altitude hold.</li>
+<li>All drills in stabilized mode.</li>
+<li>Repeat with 3 to 5 m/s wind.</li>
+<li>Nose-in hover in stabilized mode with wind. This is the hardest combination.</li>
+</ol>
+<h2 id="9-instruments">9. Instruments</h2>
+<ul>
+<li><strong>Artificial horizon.</strong> Blue is sky, brown is ground. The horizon line tilts opposite to your roll and drops when the nose rises. The pitch ladder is marked every 10 deg.</li>
+<li><strong>Altitude AGL.</strong> Height above the ground below the drone.</li>
+<li><strong>Altitude MSL.</strong> Field elevation plus AGL. Set the field elevation in the flight plan window.</li>
+<li><strong>Climb.</strong> Vertical speed. Positive is up.</li>
+<li><strong>Ground speed.</strong> Horizontal speed over the ground.</li>
+<li><strong>Heading.</strong> Compass direction of the nose. 000 is north, away from you at start.</li>
+<li><strong>Distance.</strong> Straight-line distance from your eyes to the drone.</li>
+<li><strong>Battery.</strong> Percent remaining.</li>
+<li><strong>Motor bars.</strong> Output of each motor. Watch them to learn how a quadcopter moves: the rear pair speeds up to pitch forward, one side speeds up to roll, and one diagonal pair speeds up to yaw.</li>
+</ul>
+<h2 id="10-sensors-and-obstacle-avoidance">10. Sensors and obstacle avoidance</h2>
+<p><strong>Range display.</strong> The triangle is the drone, nose up. Four arcs show the distance to the nearest surface in front, behind, left, and right. Each direction uses a fan of five ultrasonic beams with 6 m reach, wide enough to cover the diagonals. Green is beyond 3 m. Amber is 1.5 to 3 m. Red is under 1.5 m. No arc means nothing within range.</p>
+<p><strong>Range up.</strong> An upward ranger with 6 m reach. It sees the tree canopy, roof edges, and anything else above the drone.</p>
+<p><strong>Range down.</strong> A downward ranger with 8 m reach. It points along the body axis, so it reads long when the drone is tilted, as a real one does. It also sees the tops of obstacles.</p>
+<p><strong>Light.</strong> An upward-facing light sensor, in kilolux. It reads lower when the drone tilts away from the sun, when the sun is low, and under cloud. Full sun gives roughly 70 to 100 klx, depending on sun height.</p>
+<p><strong>Airspeed.</strong> Speed relative to the air. In a hover in wind, airspeed equals the wind speed while ground speed is zero.</p>
+<p><strong>Wind here.</strong> Wind speed at the drone's current height.</p>
+<p><strong>Clover below.</strong> Share of clover in the ground patch under the down camera. It is read from the simulator's own ground truth map. It is not image analysis. Use it as a reference value when students estimate pasture composition from the down camera picture. It shows &quot;n/a&quot; when your own field image is loaded.</p>
+<p><strong>Front and down cameras.</strong> Live inset views. The down camera has a crosshair, which helps on the precision landing drill. Untick &quot;Show front and down cameras&quot; to hide them and gain frame rate.</p>
+<p><strong>Obstacle avoidance.</strong> On by default. It acts only in position hold:</p>
+<ul>
+<li>The allowed speed toward a surface shrinks as you approach and reaches zero at 2 m.</li>
+<li>Closer than 2 m, the drone backs away gently.</li>
+<li>Between two surfaces, such as the 3.2 m gate, it centers itself.</li>
+<li>Climbing stops 1.5 m below anything overhead, such as the tree canopy.</li>
+<li>Descending stops 1.2 m above an obstacle. Move clear of it before you land. Descent to open ground is never blocked.</li>
+<li>The task box says when avoidance is limiting you.</li>
+</ul>
+<p>In altitude hold and stabilized modes you get a warning only. Those modes are for learning without assistance.</p>
+<p>The practice field has a barn, stacked round bales, a tree, and a gate with a 3.2 m opening.</p>
+<h2 id="11-wind-light-and-camera-views">11. Wind, light, and camera views</h2>
+<p><strong>Wind at 10 m.</strong> 0 to 12 m/s. This is the speed at the standard 10 m reference height. Wind is slower near the ground and follows a logarithmic profile. At 1.2 m you feel about 65 percent of the set value. At 40 m you feel about 120 percent. Gusts vary the speed by up to nearly 50 percent.</p>
+<p><strong>Wind from.</strong> The compass direction the wind blows from. 270 deg means wind from the west, pushing the drone east. The windsock on the field shows direction and strength.</p>
+<p><strong>Sun height.</strong> Sun elevation above the horizon, 8 to 80 deg. It changes scene brightness, shadow length, and the light sensor reading.</p>
+<p><strong>Cloud cover.</strong> 0 to 100 percent. It dims direct sun, greys the sky, and fades the shadow. The shadow is an important depth cue, so heavy cloud makes height judgment harder.</p>
+<p><strong>Camera views.</strong></p>
+<ul>
+<li>Pilot (line of sight): you stand still and watch the drone. This is how real visual-line-of-sight flying works, and it is the view to train in. The view zooms gently as the drone gets farther away.</li>
+<li>Chase: the camera follows behind the drone. Good for demonstrations and videos.</li>
+<li>Onboard (FPV): the view from the drone.</li>
+</ul>
+<h2 id="12-flight-plan-window">12. Flight plan window</h2>
+<p>Open it with the &quot;Open flight plan&quot; button or the P key. It floats over the 3D view. You can leave it open while the drone flies.</p>
+<p><strong>The map.</strong> North is up. The orange H is the home point, where you stand. The yellow triangle is the drone. A scale bar sits at the bottom left.</p>
+<div class="scroll"><table>
+<thead>
+<tr><th>Button</th><th>Action</th></tr>
+</thead>
+<tbody>
+<tr><td>Survey area / Waypoint route</td><td>Choose the planning mode</td></tr>
+<tr><td>Undo point</td><td>Remove the last corner or waypoint</td></tr>
+<tr><td>Clear</td><td>Remove all corners or waypoints in the current mode, and the flown track. On an imported plan with no field image, clearing the last point also returns to the practice field. See section 15</td></tr>
+<tr><td>Whole field</td><td>Make the survey area cover the whole loaded image</td></tr>
+<tr><td>Zoom in / Zoom out</td><td>Change the map scale</td></tr>
+<tr><td>Fit to plan</td><td>Frame the home point, image, and plan</td></tr>
+<tr><td>Set home</td><td>Move the home point on your own field. Press it, then click the map where you will stand and take off. Greyed out on the practice field, where home is fixed. See section 15</td></tr>
+</tbody>
+</table></div>
+<p>Click the map to add a point. Drag an existing point to move it.</p>
+<p><strong>Parameters.</strong></p>
+<div class="scroll"><table>
+<thead>
+<tr><th>Parameter</th><th>Range</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>Camera</td><td>3 presets</td><td>Sets sensor size, focal length, and image size</td></tr>
+<tr><td>Altitude above ground</td><td>5 to 120 m</td><td>Survey height AGL. Also the default height for new waypoints</td></tr>
+<tr><td>Front overlap</td><td>10 to 95 percent</td><td>Overlap between consecutive photos on one line</td></tr>
+<tr><td>Side overlap</td><td>10 to 95 percent</td><td>Overlap between neighbouring lines</td></tr>
+<tr><td>Speed</td><td>1 to 8 m/s</td><td>Cruise speed for the plan</td></tr>
+<tr><td>Flight line direction</td><td>0 to 179 deg</td><td>0 gives north-south lines. 90 gives east-west lines</td></tr>
+<tr><td>Field elevation</td><td>m MSL</td><td>Ground height above sea level. Used for the MSL readouts</td></tr>
+<tr><td>Battery endurance</td><td>5 to 45 min</td><td>Sets the battery for the next flight and the battery warning</td></tr>
+</tbody>
+</table></div>
+<p><strong>Camera presets.</strong></p>
+<div class="scroll"><table>
+<thead>
+<tr><th>Preset</th><th>Sensor (mm)</th><th>Focal length (mm)</th><th>Image (pixels)</th></tr>
+</thead>
+<tbody>
+<tr><td>Small drone, 12 MP (1/2.3 in)</td><td>6.17 x 4.55</td><td>4.5</td><td>4000 x 3000</td></tr>
+<tr><td>Mapping drone, 20 MP (1 in)</td><td>13.2 x 8.8</td><td>8.8</td><td>5472 x 3648</td></tr>
+<tr><td>Multispectral, 1.2 MP per band</td><td>4.8 x 3.6</td><td>5.4</td><td>1280 x 960</td></tr>
+</tbody>
+</table></div>
+<p><strong>The formulas behind the results.</strong></p>
+<ul>
+<li>GSD (cm/pixel) = sensor width (mm) x altitude (m) x 100 / (focal length (mm) x image width (pixels))</li>
+<li>Footprint width (m) = sensor width x altitude / focal length</li>
+<li>Footprint length (m) = sensor height x altitude / focal length</li>
+<li>Line spacing (m) = footprint width x (1 - side overlap)</li>
+<li>Trigger distance (m) = footprint length x (1 - front overlap)</li>
+<li>Trigger interval (s) = trigger distance / speed</li>
+</ul>
+<p>Worked example: the 20 MP camera at 40 m with 75 percent front and 70 percent side overlap gives a GSD of 1.10 cm/pixel, a 60 x 40 m footprint, 18 m line spacing, and a 10 m trigger distance. A 1 ha square then needs 6 lines and 66 photos.</p>
+<p><strong>Warnings.</strong> The window warns when:</p>
+<ul>
+<li>The photo interval is under 2 s. Many cameras cannot write images that fast. Slow down or fly higher.</li>
+<li>The plan needs more than 80 percent of the battery endurance. Split the job or raise the altitude.</li>
+<li>Any altitude is above 400 ft (122 m) AGL.</li>
+<li>The farthest point is more than 450 m from you. Holding visual line of sight is doubtful.</li>
+</ul>
+<p>The time estimate includes rough allowances for turns, climb, and descent.</p>
+<p>A glossary, &quot;Terms you need to know&quot;, sits at the bottom of the window.</p>
+<h2 id="13-survey-area-mode">13. Survey area mode</h2>
+<p>Use this to map a field with a back-and-forth (lawnmower) pattern.</p>
+<ol>
+<li>Select &quot;Survey area&quot;.</li>
+<li>Click the corners of the area, in order around the boundary. Three corners is the minimum.</li>
+<li>Set the camera, altitude, overlaps, speed, and line direction.</li>
+<li>Read the results table and clear any warnings.</li>
+</ol>
+<p>On the map:</p>
+<ul>
+<li>White dashed outline: your boundary.</li>
+<li>Orange lines: the flight path, from home and back.</li>
+<li>Small dark squares: planned photo positions.</li>
+<li>Two white shaded boxes: the first two photo footprints on the first line. Their shared area is the front overlap.</li>
+<li>One blue shaded box: the neighbouring photo on the second line. Its shared area with the white boxes is the side overlap.</li>
+</ul>
+<p>Change the overlap values and watch the boxes move. This is the fastest way to understand the two overlaps.</p>
+<p>The pattern starts from whichever end is nearer to home. For concave boundaries, each line runs between its outermost crossings of the boundary.</p>
+<p>Teaching points to try:</p>
+<ul>
+<li>Halve the altitude. GSD halves, and the photo count roughly quadruples.</li>
+<li>Turn the flight lines to run along the long side of the field. There are fewer turns and the time drops.</li>
+<li>Align the lines with the wind. Crosswind makes the drone crab and skews the footprints.</li>
+</ul>
+<h2 id="14-waypoint-route-mode">14. Waypoint route mode</h2>
+<p>Use this for inspection paths, scouting points, or any free route.</p>
+<ol>
+<li>Select &quot;Waypoint route&quot;.</li>
+<li>Click the map to drop waypoints in flying order. Drag to adjust.</li>
+<li>In the table under the map, set each waypoint's altitude (2 to 120 m AGL) and its action.</li>
+</ol>
+<div class="scroll"><table>
+<thead>
+<tr><th>Action</th><th>Marker color</th><th>What happens at the waypoint</th></tr>
+</thead>
+<tbody>
+<tr><td>Fly through</td><td>Dark</td><td>The drone passes and continues</td></tr>
+<tr><td>Take a photo</td><td>Blue</td><td>It pauses about 1.5 s and records one photo</td></tr>
+<tr><td>Hover 5 s</td><td>Purple</td><td>It holds position for 5 s</td></tr>
+</tbody>
+</table></div>
+<p>The drone climbs at home to the first waypoint's altitude, flies the route, returns home, and lands. When two waypoints differ in altitude, it climbs or descends at the start of that leg before moving on.</p>
+<p>Up to 200 waypoints are kept from an imported file.</p>
+<h2 id="15-importing-your-own-field">15. Importing your own field</h2>
+<p>Use the file picker at the top right of the flight plan window. You can also drop files onto the 3D view. An image copied to the clipboard can be pasted with Ctrl+V.</p>
+<p>When an image is loaded, it becomes the ground north of the home point and the map background.</p>
+<p><strong>Your own field replaces the practice field.</strong> As soon as you load a field image or import a plan, even a plan with no image (KML, GeoJSON, or CSV only), you are on your own field:</p>
+<ul>
+<li>The practice scenery (barn, bales, tree, gate, tree line, corner flags, and grid) and the drills are hidden, in the 3D view and on the map.</li>
+<li>The hidden obstacles cannot be hit, and the range sensors and obstacle avoidance no longer see them. Range down reads the ground only. The clover reading shows &quot;n/a&quot;.</li>
+<li>The view reaches much farther, and the &quot;Too far away&quot; warning moves out from 45 m to 500 m.</li>
+<li>The drone is reset to the home pad, and the drill is set to free flight.</li>
+</ul>
+<p>To get the practice field back:</p>
+<ul>
+<li>With a field image: press &quot;Remove field image&quot;. This also removes the plan.</li>
+<li>With an imported plan and no image: press &quot;Clear&quot; until no corner and no waypoint is left in either mode. The georeference is dropped, the scenery, obstacles, and drills return, and the drone is reset to the home pad.</li>
+</ul>
+<div class="scroll"><table>
+<thead>
+<tr><th>What you have</th><th>What to select</th><th>Result</th></tr>
+</thead>
+<tbody>
+<tr><td>A screenshot or photo (JPG, PNG, WebP)</td><td>The image</td><td>Placed using the width you type. Not georeferenced</td></tr>
+<tr><td>Google Earth boundary or path</td><td>The .kml file</td><td>Polygon becomes the survey boundary. Path or placemarks become a waypoint route, with altitudes if the file has them</td></tr>
+<tr><td>Google Earth image overlay saved as KMZ</td><td>The .kmz file</td><td>Image placed at true scale from its north, south, east, and west bounds. Boundary and path are read too. Needs internet</td></tr>
+<tr><td>KML that refers to a separate overlay image</td><td>The .kml and the image together</td><td>Same as KMZ</td></tr>
+<tr><td>Image with a world file</td><td>The image and its .jgw, .pgw, .tfw, or .wld together</td><td>Degrees: true scale plus latitude and longitude. Projected meters: true scale only</td></tr>
+<tr><td>Orthomosaic GeoTIFF</td><td>The .tif file</td><td>WGS84 or UTM (WGS84 and NAD83 zones) gives true scale plus latitude and longitude. Read at reduced resolution. Needs internet</td></tr>
+<tr><td>GeoJSON</td><td>The .geojson or .json file</td><td>Polygon, line, or points, handled as for KML</td></tr>
+<tr><td>CSV waypoint list</td><td>The .csv file</td><td>Needs latitude and longitude columns. An altitude column is optional</td></tr>
+</tbody>
+</table></div>
+<p>You can select several files at once, for example an image, its world file, and a KML boundary.</p>
+<p><strong>Setting the scale of a plain screenshot.</strong> Two ways:</p>
+<ul>
+<li>Type the true ground width of the image in &quot;Image width on the ground&quot;.</li>
+<li>Or use &quot;Set image scale from two points&quot;: click two points you can identify, then enter the true distance between them. Measure that distance with the Google Earth ruler before you take the screenshot.</li>
+</ul>
+<p><strong>Georeference status.</strong> A line under the file picker shows whether the plan is georeferenced and gives the home point latitude and longitude. Typing a new width or using two-point scaling makes the image a plain, non-georeferenced image again.</p>
+<p><strong>The home point: fixed on the practice field, movable on your own field.</strong></p>
+<ul>
+<li>On the built-in practice field, home is fixed at the orange pad. The barn, bales, tree, gate, and drills are all laid out around it. The &quot;Set home&quot; button is greyed out, and the note under it says why.</li>
+<li>On your own field, home is movable. As soon as you load a field image or import a plan (KML, KMZ, GeoJSON, CSV, or GeoTIFF), the &quot;Set home&quot; button becomes active. &quot;Remove field image&quot;, or &quot;Clear&quot; on a plan that has no image, returns to the practice field, and the button greys out again.</li>
+</ul>
+<p><strong>Where home goes.</strong> On your own field, home is first set automatically:</p>
+<ul>
+<li>With an image: 6 m south of the middle of the image's south edge.</li>
+<li>With only a boundary: 6 m south of its southernmost point.</li>
+<li>With only a route: 5 m south of the first waypoint.</li>
+</ul>
+<p><strong>Moving home.</strong> Pick the spot where you would really stand, such as a field gate or a farm track:</p>
+<ol>
+<li>Land and disarm. Home cannot be moved while the drone is armed or in the air.</li>
+<li>Press &quot;Set home&quot; under the map. The button stays highlighted, an orange &quot;SET HOME&quot; banner appears on the map, and the cursor changes while it waits for your click. Every press shows a note under the button: what to do next, that it was cancelled, or why it was refused (in red).</li>
+<li>Click the new home point on the map. Press Esc, or the button again, to cancel.</li>
+</ol>
+<p>What happens:</p>
+<ul>
+<li>The H marker, the drone, and you (the pilot) move to the clicked point. You still stand 7 m south of home, looking north.</li>
+<li>The field image, the survey boundary, the waypoints, and the yellow flown track stay where they are on the ground. The map does not jump.</li>
+<li>In a georeferenced plan, every latitude and longitude stays the same. Only the home point latitude and longitude change, and the status line shows the new values.</li>
+<li>The plan is recomputed. The flight lines stay the same, but the pattern may now start from the other end, because it starts from the end nearer to home. Path length, time, and the line-of-sight warning are updated.</li>
+<li>The drone is reset with a full battery. Green photo dots from an earlier flight are cleared.</li>
+</ul>
+<p>If you press the greyed-out button on the practice field, the note turns red and repeats the reason. Nothing else happens. Typing a new image width or using two-point scaling places the image north of home again and clears the plan.</p>
+<p><strong>Import limits.</strong></p>
+<ul>
+<li>Only the first polygon and the first path in a file are used.</li>
+<li>Rotated Google Earth overlays are placed north-up, with a warning. Re-export them north-up for an exact fit.</li>
+<li>GeoTIFFs with more than three bands or 16-bit data may not decode. Export an 8-bit RGB copy.</li>
+<li>Very large images are reduced to 4096 pixels on the long side (2048 for GeoTIFF).</li>
+</ul>
+<h2 id="16-flying-a-plan">16. Flying a plan</h2>
+<ol>
+<li>Make a valid plan. The &quot;Fly this plan&quot; button becomes active.</li>
+<li>Press &quot;Fly this plan&quot;. The drone arms, climbs over home to the plan altitude, flies the path, returns home, and lands.</li>
+<li>Use the time selector (1x to 8x) to speed up long surveys.</li>
+<li>Close the window or leave it open. The map shows live progress.</li>
+</ol>
+<p>During the flight:</p>
+<ul>
+<li>The nose turns along each leg.</li>
+<li>On survey lines, photos trigger by distance travelled. Each one appears as a green dot.</li>
+<li>The yellow line is the track actually flown. Compare it with the orange plan, especially in crosswind.</li>
+<li>The task box shows the current waypoint and the photo count.</li>
+</ul>
+<p>Taking control:</p>
+<ul>
+<li>Move the right stick (or arrow keys) past about one third. The plan stops at once and you are in your selected flight mode.</li>
+<li>&quot;Stop and hold&quot; stops the plan and hovers.</li>
+<li>At 20 percent battery the drone abandons the plan, returns home, and lands.</li>
+</ul>
+<p>After loading your own field, switch to the pilot view during a plan. It shows how small the drone looks at survey distance and height. That is a direct lesson in visual line of sight.</p>
+<h2 id="17-exporting-a-plan">17. Exporting a plan</h2>
+<p><strong>Export KML.</strong> Writes the home point, the survey boundary, the flight path with heights above ground, and every waypoint. It opens in Google Earth. KML export needs a georeferenced plan, so import a KML, KMZ, GeoTIFF, GeoJSON, CSV, or an image with a degree-based world file first.</p>
+<p><strong>Export CSV.</strong> One row per waypoint: number, latitude, longitude, altitude AGL, speed, and action. Without a georeference, the position columns are meters east and meters north of home.</p>
+<p>The exported text always appears in a box for copying. On GitHub Pages or from a local file, the browser also saves the file directly.</p>
+<p>The CSV is a general waypoint list. It is not in the exact column layout of any one flight app. Rearrange the columns to suit the app you use.</p>
+<h2 id="18-saved-data">18. Saved data</h2>
+<p>The browser stores two things for this page, on this computer only:</p>
+<ul>
+<li>Drill results: the latest 40 attempts. The Results list shows the latest 10. &quot;Clear results&quot; deletes them.</li>
+<li>Controller mapping.</li>
+</ul>
+<p>Nothing is sent anywhere. Plans and imported images are not saved. Export your plan before closing the page.</p>
+<h2 id="19-troubleshooting">19. Troubleshooting</h2>
+<div class="scroll"><table>
+<thead>
+<tr><th>Problem</th><th>Likely cause and fix</th></tr>
+</thead>
+<tbody>
+<tr><td>The 3D view is blank</td><td>WebGL is disabled or blocked. Try another browser, update the graphics driver, or enable hardware acceleration</td></tr>
+<tr><td>Low frame rate</td><td>Untick &quot;Show front and down cameras&quot;. Make the browser window smaller. Close other tabs</td></tr>
+<tr><td>Keys do nothing</td><td>Click once on the 3D view. Keys are ignored while the cursor is in a text or number box</td></tr>
+<tr><td>The drone will not arm</td><td>It arms only on the ground and not after a crash. Press R first</td></tr>
+<tr><td>The controller is not detected</td><td>Move a stick or press a button after plugging in. Browsers hide controllers until they see input</td></tr>
+<tr><td>A stick moves the wrong way</td><td>Tick Invert for that channel in Controller setup</td></tr>
+<tr><td>Throttle behaves oddly with an RC transmitter</td><td>Clear &quot;Throttle stick springs back to center&quot;</td></tr>
+<tr><td>The drone climbs or sinks in stabilized mode</td><td>That is expected. Nothing holds height in this mode. Hold hover throttle and correct by eye</td></tr>
+<tr><td>The drone refuses to sink fast near the ground</td><td>Landing assist is limiting the descent. Untick it in the Sensors section to practise unassisted landings</td></tr>
+<tr><td>The drone slows by itself near objects</td><td>Obstacle avoidance is limiting speed. Untick it in the Sensors section</td></tr>
+<tr><td>KMZ or GeoTIFF import fails</td><td>These need internet to fetch a helper library. Check the connection or a script blocker</td></tr>
+<tr><td>The imported image is the wrong size</td><td>It is not georeferenced. Type its width or use two-point scaling</td></tr>
+<tr><td>The KML boundary does not line up with the image</td><td>The image is a plain screenshot. Import the overlay as KMZ or GeoTIFF</td></tr>
+<tr><td>Export KML is refused</td><td>The plan has no latitude and longitude. Import georeferenced data, or use CSV</td></tr>
+<tr><td>&quot;Set home&quot; is greyed out</td><td>You are on the built-in practice field, where home is fixed. Load a field image or import a plan</td></tr>
+<tr><td>&quot;Set home&quot; is refused with a red note</td><td>Land and disarm first</td></tr>
+<tr><td>Text looks wider than expected</td><td>The display font could not load. The tool still works</td></tr>
+</tbody>
+</table></div>
+<h2 id="20-known-limits">20. Known limits</h2>
+<ul>
+<li>The ground is flat. Elevation is a constant offset, so terrain following is explained in the glossary but not simulated.</li>
+<li>The airframe is generic. Stick feel is plausible but not matched to a specific drone.</li>
+<li>Simulator practice transfers well for orientation and coordination. It transfers less well for depth perception, real wind, and nerves.</li>
+<li>Georeferencing uses a flat local plane around home. This is accurate to centimeters over a farm field and degrades over several kilometers.</li>
+<li>The 400 ft ceiling and line-of-sight checks follow US Part 107 conventions. They are teaching prompts, not legal advice. Check the rules that apply where you fly.</li>
+<li>No link to a physical drone is included in this version.</li>
+</ul>
+<h2 id="21-quick-reference-card">21. Quick reference card</h2>
+<pre><code>LEFT STICK                     RIGHT STICK
+  W  throttle up                 Up     pitch forward
+  S  throttle down               Down   pitch back
+  A  yaw left                    Left   roll left
+  D  yaw right                   Right  roll right
+
+Shift  full deflection          Space  arm / disarm
+T      auto take off            L      auto land
+1      position hold            2      altitude hold
+3      stabilized               C      change camera
+P      flight plan window       R      reset
+
+Front of drone = ORANGE.   Home pad = orange ring.   You stand 7 m south of it.
+
+Safe touchdown: under 1 m/s down, level, not sliding.
+
+GSD (cm/px)      = sensor width x altitude x 100 / (focal length x image width)
+Line spacing     = footprint width  x (1 - side overlap)
+Trigger distance = footprint length x (1 - front overlap)
+MSL altitude     = field elevation + AGL altitude
+</code></pre>
+</main>
+</body>
+</html>

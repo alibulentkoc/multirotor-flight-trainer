@@ -97,6 +97,31 @@ test('user field: fieldMode is assigned in one place only, from userFieldActive'
   assert.deepStrictEqual(sets.filter(function(s){ return !/^fieldMode\s*=\s*false$/.test(s); }), ['fieldMode = on'], JSON.stringify(sets));
   assert(/var on = userFieldActive\(fieldState\(\)\)/.test(all)); assert.strictEqual((all.match(/\.hasField \|\| /g) || []).length, 1, 'the image-or-georeference rule must live only in userFieldActive'); });
 
+// ---- docs ----
+console.log('docs');
+var docs = require('../tools/build-docs.js');
+test('manual converter: blocks and inline marks', function(){
+  var h = docs.render(docs.parse('# T\n\nA **b** `c<d` [e](f.html)\nsame para\n\n- u1\n- u2\n\n3. o1\n4. o2\n\n| H1 | H2 |\n|---|---|\n| a | **b** |\n\n```\nx < **y**\n```\n\n---\n')).html;
+  assert(h.indexOf('<p>A <strong>b</strong> <code>c&lt;d</code> <a href="f.html">e</a> same para</p>') >= 0, 'paragraph and inline marks');
+  assert(h.indexOf('<ul>\n<li>u1</li>\n<li>u2</li>\n</ul>') >= 0 && h.indexOf('<ol start="3">\n<li>o1</li>\n<li>o2</li>\n</ol>') >= 0, 'lists');
+  assert(h.indexOf('<tr><th>H1</th><th>H2</th></tr>') >= 0 && h.indexOf('<tr><td>a</td><td><strong>b</strong></td></tr>') >= 0, 'table');
+  assert(h.indexOf('<pre><code>x &lt; **y**\n</code></pre>') >= 0 && h.indexOf('<hr>') >= 0, 'code fence is literal, rule'); });
+test('manual converter: heading ids and Contents links', function(){
+  var d = docs.render(docs.parse('# My Doc\n\n## Contents\n\n1. First part\n2. Second\n\n## 1. First part\n\n### Keys\n\n## 2. Second\n\n### Keys\n'));
+  assert.strictEqual(d.title, 'My Doc');
+  assert(d.html.indexOf('<ol class="toc">\n<li><a href="#1-first-part">First part</a></li>\n<li><a href="#2-second">Second</a></li>\n</ol>') >= 0, 'contents links');
+  assert(d.html.indexOf('<h2 id="1-first-part">') >= 0 && d.html.indexOf('<h3 id="keys">') >= 0 && d.html.indexOf('<h3 id="keys-2">') >= 0, 'unique ids');
+  assert.throws(function(){ docs.render(docs.parse('## Contents\n\n1. Missing\n')); }, /no matching section/);
+  assert.throws(function(){ docs.parse('> quote\n'); }, /not supported/); });
+test('manual page: every Contents link has a target, fonts come from ../labs/fonts/', function(){
+  var html = docs.buildManual(), links = html.match(/href="#[^"]+"/g) || [];
+  assert(links.length >= 21, 'contents links: ' + links.length);
+  links.forEach(function(l){ assert(html.indexOf(' id="' + l.slice(7, -1) + '"') >= 0, 'no target for ' + l); });
+  assert(html.indexOf('url("../labs/fonts/LM-regular.woff2")') >= 0 && html.indexOf('url("fonts/') < 0);
+  assert(html.indexOf('href="../../index.html"') >= 0 && html.indexOf('href="../labs/index.html"') >= 0, 'top bar links'); });
+test('docs/manual/index.html is up to date with docs/USER_MANUAL.md (run "npm run build:docs" if this fails)', function(){
+  assert.strictEqual(fs.readFileSync(path.join(__dirname, '..', docs.OUT), 'utf8'), docs.buildManual()); });
+
 // ---- build ----
 console.log('build');
 test('index.html is up to date with src/ (run "npm run build" if this fails)', function(){

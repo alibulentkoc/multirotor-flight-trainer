@@ -5,8 +5,9 @@
   "description": "Browser-based multirotor flight simulator and survey mission planner for teaching",
   "license": "MIT",
   "scripts": {
-    "build": "node build.js",
+    "build": "node build.js && node tools/build-docs.js",
     "build:cdn": "node build.js --cdn",
+    "build:docs": "node tools/build-docs.js",
     "test": "node test/run.js"
   }
 }
