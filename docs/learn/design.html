@@ -68,6 +68,9 @@ h3{font-size:1.05rem;margin:1.2rem 0 .2rem}
 .calc{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin:1rem 0} .calc label{display:grid;grid-template-columns:1fr 5.2rem;gap:.5rem;align-items:center;margin:.3rem 0;font-size:.92rem}
 .calc input{font:inherit;padding:1px 6px;border:0;border-bottom:1px solid var(--muted);background:transparent;color:var(--ink);text-align:right;width:100%}
 .calc table{margin:0;width:100%} .calc td:last-child{text-align:right;font-weight:700} #verdict{font-style:italic;margin-top:.6rem;text-align:left}
+table.res{width:100%} table.res td:nth-child(2){font-weight:700} table.res td:nth-child(3){color:var(--muted);font-size:.85rem}
+.bar{display:flex;height:16px;border:1px solid var(--ink);margin:.6rem 0 .2rem} .bar i{display:block;background:var(--ink);border-right:1px solid var(--paper)} .bar i:last-child{border-right:0}
+#headline b{font-weight:700}
 @media (max-width:760px){.calc{grid-template-columns:1fr}}
 @media print{.try{background:none} figure{page-break-inside:avoid}}
 </style>
@@ -151,8 +154,8 @@ h3{font-size:1.05rem;margin:1.2rem 0 .2rem}
 <li>Place the battery and the payload so the drone balances at its center.</li>
 <li>Test in steps: on the bench with no propellers, then a tethered hover, then free flight in calm air.</li>
 </ol>
-<hr>
-<nav class="foot"><span><a href="flight.html">Previous: How a multirotor flies</a></span><span><a href="index.html">Fundamentals</a></span><span></span></nav>
+<div class="try"><p><b>Design your own.</b> The <a href="designer.html">design tool</a> turns these rules into a full sizing: propellers, motors, speed controllers, battery, and frame, for the payload and flight time you enter.</p></div><hr>
+<nav class="foot"><span><a href="flight.html">Previous: How a multirotor flies</a></span><span><a href="index.html">Fundamentals</a></span><span><a href="designer.html">Next: Design tool</a></span></nav>
 </main>
 <script>
 (function(){

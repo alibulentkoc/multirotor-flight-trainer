@@ -68,6 +68,9 @@ h3{font-size:1.05rem;margin:1.2rem 0 .2rem}
 .calc{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin:1rem 0} .calc label{display:grid;grid-template-columns:1fr 5.2rem;gap:.5rem;align-items:center;margin:.3rem 0;font-size:.92rem}
 .calc input{font:inherit;padding:1px 6px;border:0;border-bottom:1px solid var(--muted);background:transparent;color:var(--ink);text-align:right;width:100%}
 .calc table{margin:0;width:100%} .calc td:last-child{text-align:right;font-weight:700} #verdict{font-style:italic;margin-top:.6rem;text-align:left}
+table.res{width:100%} table.res td:nth-child(2){font-weight:700} table.res td:nth-child(3){color:var(--muted);font-size:.85rem}
+.bar{display:flex;height:16px;border:1px solid var(--ink);margin:.6rem 0 .2rem} .bar i{display:block;background:var(--ink);border-right:1px solid var(--paper)} .bar i:last-child{border-right:0}
+#headline b{font-weight:700}
 @media (max-width:760px){.calc{grid-template-columns:1fr}}
 @media print{.try{background:none} figure{page-break-inside:avoid}}
 </style>
@@ -78,11 +81,12 @@ h3{font-size:1.05rem;margin:1.2rem 0 .2rem}
 <h1>Fundamentals</h1>
 <div class="level">What a multirotor is made of, how it flies, and how one is designed</div>
 
-<p>Three short chapters. Read them in order, or jump to what you need. Each one has simple drawings, plain words, and links to a lab where you can see the idea at work.</p>
+<p>Three short chapters and a design tool. Read them in order, or jump to what you need. Each one has simple drawings, plain words, and links to a lab where you can see the idea at work.</p>
 <div class="chap">
 <a href="parts.html"><b>1. Parts of a multirotor</b><span>Frame, motors, propellers, electronics, sensors, battery, and the RC transmitter in your hands.</span></a>
 <a href="flight.html"><b>2. How a multirotor flies</b><span>Roll, pitch, and yaw. Which motors speed up for each move. Thrust, weight, and why it needs a computer.</span></a>
 <a href="design.html"><b>3. Designing a multirotor</b><span>Forces, thrust, payload, and flight time, with a small calculator. Multirotor, fixed wing, or hybrid?</span></a>
+<a href="designer.html"><b>4. Design tool</b><span>Enter a payload and a flight time. Get propellers, motors, speed controllers, battery, and frame, with every formula shown.</span></a>
 </div>
 <p class="note">These pages explain ideas. They are not a build guide or a legal guide. Follow the rules for where you fly.</p>
 

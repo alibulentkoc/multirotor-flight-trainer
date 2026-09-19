@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design tool</title>
+<link rel="preload" href="../labs/fonts/LM-regular.woff2" as="font" type="font/woff2" crossorigin>
+<style>@font-face{font-family:"Latin Modern";font-style:normal;font-weight:400;font-display:swap;src:url("../labs/fonts/LM-regular.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:italic;font-weight:400;font-display:swap;src:url("../labs/fonts/LM-italic.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:normal;font-weight:700;font-display:swap;src:url("../labs/fonts/LM-bold.woff2") format("woff2")}
+@font-face{font-family:"Latin Modern";font-style:italic;font-weight:700;font-display:swap;src:url("../labs/fonts/LM-bold-italic.woff2") format("woff2")}
+:root{--bg:#f4f3ef;--paper:#fffffc;--ink:#111111;--muted:#555555;--line:#111111;--soft:#cfcdc6;--accent:#8a2b06;--chip:#f1efe8;--ok:#1d5e3c}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15171a;--paper:#1c1f23;--ink:#e9e6df;--muted:#a9a59b;--line:#e9e6df;--soft:#3a3e44;--accent:#f0a27c;--chip:#24282d;--ok:#7fcfa4}}
+:root[data-theme="dark"]{--bg:#15171a;--paper:#1c1f23;--ink:#e9e6df;--muted:#a9a59b;--line:#e9e6df;--soft:#3a3e44;--accent:#f0a27c;--chip:#24282d;--ok:#7fcfa4}
+*{box-sizing:border-box}
+html{font-size:20px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Latin Modern","Latin Modern Roman","CMU Serif","Computer Modern Serif",Georgia,"Times New Roman",serif;line-height:1.45;
+  text-rendering:optimizeLegibility;font-kerning:normal;font-variant-ligatures:common-ligatures}
+.top{max-width:720px;margin:0 auto;padding:14px 8px 0;display:flex;gap:16px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;font-size:.85rem}
+.top a{color:var(--ink);text-decoration:none}
+.top .brand{font-variant:small-caps;letter-spacing:.04em}
+.btn{border:1px solid var(--ink);padding:4px 14px;font-weight:700}
+.btn:hover{background:var(--ink);color:var(--paper) !important}
+main{max-width:720px;margin:14px auto 40px;background:var(--paper);border:1px solid var(--soft);padding:52px 64px 48px}
+h1{font-size:1.72rem;font-weight:400;line-height:1.2;text-align:center;margin:0 0 .35rem}
+.level{text-align:center;font-style:italic;color:var(--muted);margin-bottom:1.6rem}
+h2{font-size:1.25rem;font-weight:700;margin:2rem 0 .5rem}
+p{margin:.9rem 0 .3rem;text-align:justify;hyphens:auto}
+ol,ul{margin:.25rem 0 .9rem;padding-left:1.7rem} li{margin:.28rem 0;text-align:left}
+strong{font-weight:700}
+hr{border:0;border-top:1px solid var(--soft);margin:1.5rem 0}
+a{color:var(--accent)}
+pre{background:var(--chip);border:1px solid var(--soft);padding:10px 14px;overflow-x:auto;font:.72rem/1.5 "Latin Modern Mono","CMU Typewriter Text","Courier New",monospace}
+.scroll{overflow-x:auto}
+/* booktabs-style tables: heavy top and bottom rules, light mid rule, no vertical lines */
+table{border-collapse:collapse;margin:.9rem auto;font-size:.92rem;border-top:2px solid var(--line);border-bottom:2px solid var(--line)}
+th,td{padding:.32rem .9rem;text-align:left;vertical-align:middle;border:0}
+thead th{border-bottom:1px solid var(--line);font-weight:700}
+tbody tr:first-child td{padding-top:.45rem}
+td:empty{min-width:3.4rem;height:2rem;border-bottom:1px dotted var(--muted)}
+.calm{border-left:3px solid var(--ink);padding:.1rem 0 .1rem 1rem;margin:1rem 0;font-style:italic;color:var(--muted)}
+.calm ul{margin:0;padding-left:1.1rem;list-style:none} .calm li{margin:.15rem 0} .calm strong{font-style:normal;color:var(--ink)}
+details.keys{margin:1rem 0} details.keys summary{cursor:pointer;font-variant:small-caps;letter-spacing:.03em;color:var(--muted)}
+nav.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:.4rem;font-size:.9rem;font-style:italic}
+input[type=checkbox]{width:1.05rem;height:1.05rem;accent-color:var(--ok);vertical-align:middle}
+input.score{width:3.6rem;font:inherit;padding:1px 6px;border:0;border-bottom:1px solid var(--muted);background:transparent;color:var(--ink);text-align:center}
+.done-row td{color:var(--muted)} .done-row a{color:var(--muted)}
+.note{color:var(--muted);font-size:.85rem;font-style:italic;text-align:center}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:760px){html{font-size:18px} main{margin:10px 0 0;border-left:0;border-right:0;padding:30px 22px} p{text-align:left}}
+@media print{.top,nav.foot,details.keys{display:none} html{font-size:11pt} body{background:#fff} main{border:0;margin:0;max-width:none;padding:0} .labpage{page-break-after:always}}
+
+svg{max-width:100%;height:auto;display:block;margin:0 auto;font-family:inherit;font-size:16px;color:var(--ink)}
+svg text{fill:currentColor} svg text.small{font-size:13px} svg text[style]{fill:#fff}
+figure{margin:1.4rem 0 1.6rem} figure .scroll{overflow-x:auto} figure svg{min-width:560px}
+figcaption{font-size:.9rem;text-align:center;margin-top:.5rem;color:var(--ink)} figcaption b{font-weight:700}
+.top .links{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+.parts{display:grid;grid-template-columns:72px 1fr;gap:.2rem 1rem;align-items:start;margin:1rem 0}
+.parts .icon{width:64px;height:64px;margin:.2rem 0 0;min-width:0}
+.parts h3{margin:.2rem 0 .1rem;font-size:1.05rem} .parts p{margin:.15rem 0;text-align:left;hyphens:manual}
+.parts p b{font-weight:700}
+h3{font-size:1.05rem;margin:1.2rem 0 .2rem}
+.try{border:1px solid var(--soft);border-left:3px solid var(--accent);padding:.5rem 1rem;margin:1.2rem 0;background:var(--chip)}
+.try p{margin:.25rem 0;text-align:left} .try b{font-variant:small-caps;letter-spacing:.03em}
+.eq{text-align:center;margin:.8rem 0;font-style:italic;hyphens:manual} .eq span{font-style:normal}
+.chap{display:grid;gap:.9rem;margin:1.4rem 0} .chap a{display:block;border:1px solid var(--soft);padding:.7rem 1rem;text-decoration:none;color:var(--ink)}
+.chap a:hover{border-color:var(--ink)} .chap b{font-size:1.1rem} .chap span{display:block;color:var(--muted);font-style:italic;font-size:.95rem}
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin:1rem 0} .calc label{display:grid;grid-template-columns:1fr 5.2rem;gap:.5rem;align-items:center;margin:.3rem 0;font-size:.92rem}
+.calc input{font:inherit;padding:1px 6px;border:0;border-bottom:1px solid var(--muted);background:transparent;color:var(--ink);text-align:right;width:100%}
+.calc table{margin:0;width:100%} .calc td:last-child{text-align:right;font-weight:700} #verdict{font-style:italic;margin-top:.6rem;text-align:left}
+table.res{width:100%} table.res td:nth-child(2){font-weight:700} table.res td:nth-child(3){color:var(--muted);font-size:.85rem}
+.bar{display:flex;height:16px;border:1px solid var(--ink);margin:.6rem 0 .2rem} .bar i{display:block;background:var(--ink);border-right:1px solid var(--paper)} .bar i:last-child{border-right:0}
+#headline b{font-weight:700}
+@media (max-width:760px){.calc{grid-template-columns:1fr}}
+@media print{.try{background:none} figure{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="index.html">Multirotor Flight Trainer: Fundamentals</a><span class="links"><a href="../labs/index.html">Labs</a><a href="../manual/index.html">Manual</a><a class="btn" href="../../index.html" target="_blank" rel="noopener">Open the trainer</a></span></div>
+<main>
+<h1>Design tool</h1>
+<div class="level">Fundamentals: size a multirotor from its mission</div>
+
+<p>Tell the tool what the drone must do. It sizes the propellers, motors, speed controllers, battery, and frame, shows every formula it used, and lets you change every assumption. Then check the result against real parts from a data sheet.</p>
+<p>The page opens with a worked example: carry 0.5 kg for 20 minutes. Change the numbers to design your own.</p>
+<div class="try"><p><b>What this is.</b> A first-pass sizing tool for learning, based on momentum theory and typical component data. It gets you into the right range. It does not replace manufacturer thrust tests, and it is not a build guide.</p></div>
+
+<h2>1. What the drone must do</h2>
+<div class="calc" id="req"><div>
+<label>Payload (g)<input type="number" id="qPayload" value="500" step="10" min="0"></label><label>Hover time with payload (min)<input type="number" id="qTime" value="20" step="1" min="1"></label><label>Number of motors (3 to 12)<input type="number" id="qN" value="4" step="1" min="3"></label><label>Thrust-to-weight ratio<input type="number" id="qTwr" value="2" step="0.1" min="1.2"></label>
+</div><div>
+<label>Battery cells in series (S)<input type="number" id="qCells" value="4" step="1" min="1"></label><label>Field elevation (m above sea level)<input type="number" id="qElev" value="0" step="50" min="0"></label>
+<label>Choose the propeller size for me<input type="checkbox" id="qAuto" checked style="width:1.1rem;justify-self:end"></label>
+<label>Propeller diameter (in)<input type="number" id="qProp" value="12" step="0.5" min="2"></label>
+</div></div>
+
+<div id="fail" hidden class="try"><p><b>No design closes.</b> With these numbers, the battery needed to lift the battery keeps growing. Ask for a shorter hover time, a lighter payload, more motors, or a better battery (raise the specific energy under the assumptions).</p></div>
+
+<div id="results">
+<h2>2. The sized design</h2>
+<p id="headline" style="text-align:left"></p>
+<div id="warn" class="calm" style="font-style:normal"></div>
+
+<h3>Where the weight goes</h3>
+<div class="bar" id="bar" aria-hidden="true"></div>
+<div class="scroll"><table class="res"><thead><tr><th>Part</th><th>Mass</th><th>Share</th></tr></thead><tbody id="tMass"></tbody></table></div>
+
+<h3>Propellers</h3>
+<div class="scroll"><table class="res"><thead><tr><th>Quantity</th><th>Value</th><th>How it is found</th></tr></thead><tbody id="tProp"></tbody></table></div>
+<h3>Motors and speed controllers</h3>
+<div class="scroll"><table class="res"><thead><tr><th>Quantity</th><th>Value</th><th>How it is found</th></tr></thead><tbody id="tMotor"></tbody></table></div>
+<h3>Battery and wiring</h3>
+<div class="scroll"><table class="res"><thead><tr><th>Quantity</th><th>Value</th><th>How it is found</th></tr></thead><tbody id="tBatt"></tbody></table></div>
+<h3>Performance and frame</h3>
+<div class="scroll"><table class="res"><thead><tr><th>Quantity</th><th>Value</th><th>How it is found</th></tr></thead><tbody id="tPerf"></tbody></table></div>
+
+<h3>Would a bigger battery help?</h3>
+<figure><div class="scroll"><svg id="curve" viewBox="0 0 640 270" role="img" aria-label="Hover time against battery mass"></svg></div>
+<figcaption><b>Figure 1.</b> Hover time against battery mass for this design. The curve flattens and then falls. Past the peak, a bigger battery costs more to carry than it gives back.</figcaption></figure>
+</div>
+
+<h2>3. Check it with real parts</h2>
+<p>Now shop for parts close to the sized values, and enter what their data sheets say. Motor makers publish thrust tables for each propeller and voltage. Use the full-throttle thrust from that table.</p>
+<p style="text-align:left"><button id="copy" class="btn" style="background:none;cursor:pointer;font:inherit;color:var(--ink)">Copy the sized design into the checker</button></p>
+<div class="calc" id="chk"><div>
+<label>Everything except battery and payload (g)<input type="number" id="cDry" value="0" step="10" min="0"></label><label>Battery (g)<input type="number" id="cBattery" value="0" step="10" min="0"></label><label>Payload (g)<input type="number" id="cPayload" value="0" step="10" min="0"></label><label>Number of motors<input type="number" id="cN" value="4" step="1" min="3"></label>
+</div><div>
+<label>Propeller diameter (in)<input type="number" id="cProp" value="10" step="0.5" min="2"></label><label>Full-throttle thrust per motor (g)<input type="number" id="cThrust" value="0" step="10" min="0"></label><label>Battery capacity (mAh)<input type="number" id="cCap" value="0" step="100" min="0"></label><label>Battery cells (S)<input type="number" id="cCells" value="4" step="1" min="1"></label>
+</div></div>
+<div class="scroll"><table class="res"><thead><tr><th>Quantity</th><th>Value</th><th>Comment</th></tr></thead><tbody id="tCheck"></tbody></table></div>
+
+<h2>4. Principles and formulas</h2>
+<p>The tool repeats one loop until the numbers stop changing: guess the weight, size every part for that weight, add the parts up, and use the sum as the next guess. Aircraft are sized this way in practice, because every part depends on the total.</p>
+<div class="scroll"><table class="res"><thead><tr><th>Step</th><th>Formula</th><th>In words</th></tr></thead><tbody>
+<tr><td>Weight</td><td>W = m g</td><td>Mass times gravity, in newtons.</td></tr>
+<tr><td>Air density</td><td>&rho; = 1.225 (1 - 2.256 x 10<sup>-5</sup> h)<sup>4.256</sup></td><td>Thinner air at elevation h (m) means more power and faster propellers.</td></tr>
+<tr><td>Propeller area</td><td>A = N &pi; D&sup2; / 4</td><td>N propellers of diameter D. The tool picks D so that W / A is near the target disc loading.</td></tr>
+<tr><td>Hover power</td><td>P = W<sup>1.5</sup> / &radic;(2 &rho; A) / (FM &eta;)</td><td>Momentum theory gives the ideal power. The figure of merit FM covers propeller losses. &eta; covers the motor and speed controller.</td></tr>
+<tr><td>Battery energy</td><td>E = P t / u</td><td>Power times time, divided by the usable share u of the pack.</td></tr>
+<tr><td>Battery mass</td><td>m<sub>b</sub> = E / e</td><td>Energy divided by the specific energy e of the pack, in Wh/kg.</td></tr>
+<tr><td>Capacity</td><td>Q = E / V, with V = 3.7 S</td><td>Energy divided by the nominal voltage of S cells.</td></tr>
+<tr><td>Thrust per motor</td><td>T<sub>max</sub> = R W / N</td><td>R is the thrust-to-weight ratio. About 2 lets the drone hover near half throttle.</td></tr>
+<tr><td>Propeller speed</td><td>T = C<sub>T</sub> &rho; n&sup2; D<sup>4</sup></td><td>Solved for n, in revolutions per second. C<sub>T</sub> is the thrust coefficient of the propeller.</td></tr>
+<tr><td>Motor KV</td><td>KV = rpm<sub>max</sub> / (k V)</td><td>A loaded motor reaches only a share k of its no-load speed, about 0.75.</td></tr>
+<tr><td>Peak current</td><td>I<sub>max</sub> = T<sub>max</sub><sup>1.5</sup> / &radic;(2 &rho; A<sub>1</sub>) / &eta;<sub>peak</sub> / V</td><td>As for hover, but for one propeller at full thrust, and with a lower efficiency, because everything is less efficient flat out.</td></tr>
+<tr><td>Speed controller</td><td>I<sub>ESC</sub> &ge; 1.3 I<sub>max</sub></td><td>A margin, rounded up to a standard size.</td></tr>
+<tr><td>C rating</td><td>C &ge; N I<sub>max</sub> / Q<sub>Ah</sub></td><td>The pack must deliver the peak current of all the motors.</td></tr>
+<tr><td>Frame size</td><td>wheelbase = 1.1 D / sin(&pi; / N)</td><td>Motors on a circle, with neighbouring propellers 10 percent of a diameter apart.</td></tr>
+<tr><td>Tilt limit</td><td>&theta; = acos(1 / R)</td><td>Beyond this tilt, even full throttle cannot hold the height.</td></tr>
+<tr><td>Closing the loop</td><td>m = (payload + electronics + N (motor + ESC + propeller) + battery) / (1 - f)</td><td>f is the share of the weight taken by the frame and wiring.</td></tr>
+</tbody></table></div>
+
+<h2>5. The assumptions, all adjustable</h2>
+<p>These values are typical, not exact. Change one and see how far the design moves. That is the honest way to learn which numbers matter.</p>
+<details id="assume" open><summary>Show or hide the assumptions</summary>
+<div class="calc"><div>
+<label>Propeller figure of merit, FM (0.5 to 0.75)<input type="number" id="a_fm" step="any" min="0"></label><label>Motor and speed controller efficiency in hover<input type="number" id="a_etaDrive" step="any" min="0"></label><label>Overall efficiency at full throttle<input type="number" id="a_peakEff" step="any" min="0"></label><label>Battery specific energy (Wh/kg). LiPo: 130 to 200<input type="number" id="a_specWhKg" step="any" min="0"></label><label>Usable share of the battery<input type="number" id="a_usable" step="any" min="0"></label><label>Frame and wiring share of the weight<input type="number" id="a_frameFrac" step="any" min="0"></label><label>Flight controller, GPS, receiver (g)<input type="number" id="a_avionics" step="any" min="0"></label>
+</div><div>
+<label>Grams of thrust per gram of motor<input type="number" id="a_thrustPerMotorGram" step="any" min="0"></label><label>Speed controller mass (g per A)<input type="number" id="a_escGperA" step="any" min="0"></label><label>Target disc loading (N/m&sup2;). Typical: 50 to 100<input type="number" id="a_discLoad" step="any" min="0"></label><label>Propeller thrust coefficient<input type="number" id="a_ct" step="any" min="0"></label><label>Loaded speed as a share of no-load speed, k<input type="number" id="a_rpmFactor" step="any" min="0"></label><label>Speed controller margin<input type="number" id="a_escMargin" step="any" min="0"></label>
+<p style="text-align:left"><button id="reset" class="btn" style="background:none;cursor:pointer;font:inherit;color:var(--ink)">Restore the default assumptions</button></p>
+</div></div>
+</details>
+
+<h2>What the tool leaves out</h2>
+<ul>
+<li>Forward flight, wind, and maneuvering all use more power than hover. Expect real flight times 10 to 30 percent shorter.</li>
+<li>Propellers of the same size differ. Pitch, blade shape, and stiffness change the thrust and the current.</li>
+<li>Battery voltage sags under load and in the cold, so peak thrust falls as the pack empties.</li>
+<li>Vibration, cooling, center of gravity, wiring layout, and failsafe behavior decide whether a design flies well. None of them appear in these formulas.</li>
+<li>Rules. Many countries set weight limits, for example 250 g and 25 kg, that change what you must do to fly legally.</li>
+</ul>
+<hr>
+<nav class="foot"><span><a href="design.html">Previous: Designing a multirotor</a></span><span><a href="index.html">Fundamentals</a></span><span></span></nav>
+</main>
+<script>
+// Multirotor sizing tool. The math is in pure functions so it can be tested without a browser.
+var G = 9.81;
+var PROPS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 40];
+var ESCS = [6, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50, 60, 80, 100, 120, 150, 200];
+// Every assumption is a named value that the user can change on the page.
+var DEFAULTS = { fm: 0.60, etaDrive: 0.78, peakEff: 0.36, specWhKg: 160, usable: 0.80, frameFrac: 0.22, avionics: 120, thrustPerMotorGram: 15,
+  escGperA: 0.9, propK: 0.11, discLoad: 70, ct: 0.11, rpmFactor: 0.75, escMargin: 1.3, vCell: 3.7 };
+function airDensity(h){ return 1.225*Math.pow(1 - 2.25577e-5*Math.max(0, h), 4.256); }
+function nearest(list, x){ var b = list[0]; list.forEach(function(v){ if (Math.abs(v - x) < Math.abs(b - x)) b = v; }); return b; }
+function roundUp(list, x){ for (var i = 0; i < list.length; i++) if (list[i] >= x) return list[i]; return Math.ceil(x/50)*50; }
+function hoverPowerW(massKg, rho, discArea, a){ return Math.pow(massKg*G, 1.5)/Math.sqrt(2*rho*discArea)/(a.fm*a.etaDrive); }
+function statorGuide(d){ return d <= 6 ? '22xx to 23xx' : d <= 8 ? '25xx to 28xx' : d <= 11 ? '2212 to 2814' : d <= 13 ? '3508 to 3510' : d <= 16 ? '4010 to 4114' : d <= 18 ? '5008 to 5010' : d <= 24 ? '6010 to 6215' : d <= 30 ? '8108 to 8120' : '10xx and larger'; }
+function powerLead(i){ return i < 25 ? ['16 AWG', 'XT30'] : i < 45 ? ['14 AWG', 'XT60'] : i < 70 ? ['12 AWG', 'XT60 or XT90'] : i < 110 ? ['10 AWG', 'XT90'] : i < 170 ? ['8 AWG', 'AS150'] : ['6 AWG or two packs in parallel', 'AS150']; }
+
+// q = { payload (g), time (min), n, twr, cells, propIn (0 = choose for me), elev (m) }
+function sizeDrone(q, a){
+  var rho = airDensity(q.elev), V = q.cells*a.vCell, out = { ok: true, rho: rho, V: V }, m, D = q.propIn, pass, it, s;
+  function solve(fixD){
+    var mm = Math.max(0.3, (q.payload + a.avionics)/1000*3), last = null;
+    for (it = 0; it < 400; it++){
+      var W = mm*G, d = fixD || Math.sqrt(4*W/(a.discLoad*q.n)/Math.PI)/0.0254, Dm = d*0.0254, A1 = Math.PI*Dm*Dm/4;
+      var Ph = hoverPowerW(mm, rho, q.n*A1, a), E = Ph*q.time/60/a.usable, mb = E/a.specWhKg;
+      var Tmax = q.twr*W/q.n, PmEl = Math.pow(Tmax, 1.5)/Math.sqrt(2*rho*A1)/a.peakEff, Imax = PmEl/V;
+      var mMotor = Tmax/G/a.thrustPerMotorGram, mEsc = Imax*a.escMargin*a.escGperA/1000, mProp = a.propK*d*d/1000;
+      var mNew = ((q.payload + a.avionics)/1000 + q.n*(mMotor + mEsc + mProp) + mb)/(1 - a.frameFrac);
+      last = { m: mm, d: d, Ph: Ph, E: E, mb: mb, Tmax: Tmax, PmEl: PmEl, Imax: Imax, mMotor: mMotor, mEsc: mEsc, mProp: mProp, A1: A1 };
+      if (!isFinite(mNew) || mNew > 400) return null;
+      if (Math.abs(mNew - mm) < 1e-7) return last;
+      mm = mm + 0.5*(mNew - mm);
+    }
+    return null;
+  }
+  s = solve(D > 0 ? D : 0);
+  if (s && !(D > 0)){ D = nearest(PROPS, s.d); s = solve(D); }
+  if (!s){ out.ok = false; return out; }
+  m = s.m;
+  out.mass = m; out.D = D; out.pitch = Math.round(D*0.45*2)/2; out.autoProp = !(q.propIn > 0);
+  out.parts = { payload: q.payload/1000, battery: s.mb, motors: q.n*s.mMotor, escs: q.n*s.mEsc, props: q.n*s.mProp, frame: a.frameFrac*m, avionics: a.avionics/1000 };
+  out.discLoad = m*G/(q.n*s.A1); out.hoverPower = s.Ph; out.wPerKg = s.Ph/m;
+  out.energyWh = s.E; out.capacity = s.E/V*1000; out.hoverCurrent = s.Ph/V; out.battFrac = s.mb/m;
+  out.thrustMaxG = s.Tmax/G*1000; out.thrustHoverG = m/q.n*1000; out.motorPowerEl = s.PmEl; out.motorCurrent = s.Imax; out.motorMassG = s.mMotor*1000;
+  var Dm = D*0.0254, k = a.ct*rho*Math.pow(Dm, 4);
+  out.rpmMax = 60*Math.sqrt(s.Tmax/k); out.rpmHover = 60*Math.sqrt(m*G/q.n/k); out.kv = out.rpmMax/(a.rpmFactor*V);
+  out.tipSpeed = Math.PI*Dm*out.rpmMax/60; out.hoverThrottle = Math.sqrt(1/q.twr);
+  out.esc = roundUp(ESCS, s.Imax*a.escMargin); out.totalMaxCurrent = q.n*s.Imax; out.cMin = out.totalMaxCurrent/(out.capacity/1000); out.cHover = out.hoverCurrent/(out.capacity/1000);
+  out.lead = powerLead(out.totalMaxCurrent); out.stator = statorGuide(D);
+  out.wheelbase = 1.1*Dm/Math.sin(Math.PI/q.n)*1000; out.maxTilt = Math.acos(1/q.twr)*180/Math.PI;
+  out.timeNoPayload = a.usable*s.E/hoverPowerW(m - q.payload/1000, rho, q.n*s.A1, a)*60;
+  out.curve = []; var dry = m - s.mb; // hover time against battery mass, all else fixed
+  for (var f = 0.1; f <= 4.001; f += 0.1){ var mb2 = s.mb*f; out.curve.push([mb2, a.usable*mb2*a.specWhKg/hoverPowerW(dry + mb2, rho, q.n*s.A1, a)*60]); }
+  out.warn = [];
+  if (out.battFrac > 0.4) out.warn.push('The battery is more than 40 percent of the weight. Extra battery now buys very little time. Consider a shorter flight, a lighter payload, or larger propellers.');
+  if (out.discLoad > 120) out.warn.push('Disc loading is high. The propellers are small for this weight, so hover power is high. Use larger propellers if the frame allows.');
+  if (out.tipSpeed > 200) out.warn.push('Propeller tip speed is above 200 m/s at full throttle. Expect noise and lost efficiency. Use larger propellers.');
+  if (out.kv > 3000 || out.kv < 50) out.warn.push('The motor KV is outside the usual range. Change the cell count: more cells lower the KV, fewer cells raise it.');
+  if (out.cMin > 60) out.warn.push('The pack would need a very high C rating. Use a larger pack or more cells.');
+  if (q.twr < 1.8) out.warn.push('A thrust-to-weight ratio below about 2 leaves little reserve for wind and quick corrections.');
+  if (out.totalMaxCurrent > 250) out.warn.push('Peak current is very high. Designs of this size normally use 12 cells or more.');
+  return out;
+}
+// r = { dry (g, no battery or payload), battery (g), payload (g), n, propIn, thrustG (max per motor), capacity (mAh), cells, elev }
+function checkParts(r, a){
+  var rho = airDensity(r.elev), V = r.cells*a.vCell, m = (r.dry + r.battery + r.payload)/1000, Dm = r.propIn*0.0254, A1 = Math.PI*Dm*Dm/4;
+  var o = { mass: m, twr: r.n*r.thrustG/1000/m, energyWh: r.capacity/1000*V };
+  o.hoverPower = hoverPowerW(m, rho, r.n*A1, a); o.time = a.usable*o.energyWh/o.hoverPower*60; o.hoverCurrent = o.hoverPower/V;
+  var Tmax = r.thrustG/1000*G; o.motorCurrent = Math.pow(Tmax, 1.5)/Math.sqrt(2*rho*A1)/a.peakEff/V; o.esc = roundUp(ESCS, o.motorCurrent*a.escMargin);
+  o.cMin = r.n*o.motorCurrent/(r.capacity/1000); o.discLoad = m*G/(r.n*A1); o.maxTilt = o.twr > 1 ? Math.acos(1/o.twr)*180/Math.PI : 0;
+  return o;
+}
+(function(){
+  function $(i){ return document.getElementById(i); }
+  function num(i, d){ var x = parseFloat($(i).value); return isFinite(x) ? x : d; }
+  function f(x, n){ n = n === undefined ? 0 : n; if (n < 0){ var k = Math.pow(10, -n); return String(Math.round(x/k)*k); } return (+x).toFixed(n); }
+  function rows(id, list){ $(id).innerHTML = list.map(function(r){ return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + (r[2] || '') + '</td></tr>'; }).join(''); }
+  var AKEYS = ['fm', 'etaDrive', 'peakEff', 'specWhKg', 'usable', 'frameFrac', 'avionics', 'thrustPerMotorGram', 'escGperA', 'discLoad', 'ct', 'rpmFactor', 'escMargin'];
+  function readA(){ var a = {}; for (var k in DEFAULTS) a[k] = DEFAULTS[k]; AKEYS.forEach(function(k){ var el = $('a_' + k); if (el){ var x = parseFloat(el.value); if (isFinite(x) && x > 0) a[k] = x; } }); return a; }
+  var last = null;
+  function run(){
+    var a = readA(), q = { payload: Math.max(0, num('qPayload', 0)), time: Math.max(1, num('qTime', 20)), n: Math.round(Math.min(12, Math.max(3, num('qN', 4)))),
+      twr: Math.min(8, Math.max(1.2, num('qTwr', 2))), cells: Math.round(Math.min(14, Math.max(1, num('qCells', 4)))), propIn: $('qAuto').checked ? 0 : Math.max(2, num('qProp', 10)), elev: Math.max(0, num('qElev', 0)) };
+    $('qProp').disabled = $('qAuto').checked;
+    var o = sizeDrone(q, a); last = { q: q, o: o };
+    $('results').hidden = !o.ok; $('fail').hidden = o.ok;
+    if (!o.ok) return;
+    $('headline').innerHTML = 'All-up weight <b>' + f(o.mass, 2) + ' kg</b>. ' + q.n + ' motors with <b>' + o.D + ' x ' + f(o.pitch, 1) + ' in</b> propellers. A <b>' + q.cells + 'S ' + f(Math.round(o.capacity/100)*100) + ' mAh</b> battery. <b>' + o.esc + ' A</b> speed controllers.';
+    var P = o.parts, order = [['payload', 'Payload'], ['battery', 'Battery'], ['frame', 'Frame and wiring'], ['motors', 'Motors'], ['escs', 'Speed controllers'], ['props', 'Propellers'], ['avionics', 'Flight controller, GPS, receiver']];
+    rows('tMass', order.map(function(k){ return [k[1], f(P[k[0]]*1000) + ' g', f(P[k[0]]/o.mass*100) + ' %']; }).concat([['<b>All-up weight</b>', '<b>' + f(o.mass*1000) + ' g</b>', '100 %']]));
+    $('bar').innerHTML = order.map(function(k, i){ return '<i title="' + k[1] + '" style="width:' + (P[k[0]]/o.mass*100) + '%;opacity:' + (1 - i*0.12) + '"></i>'; }).join('');
+    rows('tProp', [['Propeller', o.D + ' x ' + f(o.pitch, 1) + ' in' + (o.autoProp ? ' (chosen for you)' : ''), 'diameter x pitch'], ['Disc loading', f(o.discLoad) + ' N/m&sup2;', 'weight / total propeller area'],
+      ['Thrust needed per motor', f(o.thrustMaxG) + ' g', 'ratio x weight / motors'], ['Thrust per motor in hover', f(o.thrustHoverG) + ' g', 'weight / motors'],
+      ['Propeller speed, hover to full', f(o.rpmHover, -2) + ' to ' + f(o.rpmMax, -2) + ' rpm', 'from T = C<sub>T</sub> &rho; n&sup2; D<sup>4</sup>'], ['Tip speed at full throttle', f(o.tipSpeed) + ' m/s', 'keep below about 200']]);
+    rows('tMotor', [['Motor KV, about', f(o.kv, -1) + ' rpm/V', 'full rpm / (' + a.rpmFactor + ' x battery voltage)'], ['Typical stator size', o.stator, 'a guide by propeller size'], ['Peak electrical power, each', f(o.motorPowerEl) + ' W', ''],
+      ['Peak current, each', f(o.motorCurrent, 1) + ' A', 'power / voltage'], ['Speed controller rating', 'at least ' + o.esc + ' A', 'peak current x ' + a.escMargin], ['Estimated motor mass, each', f(o.motorMassG) + ' g', '']]);
+    rows('tBatt', [['Cells and voltage', q.cells + 'S, ' + f(o.V, 1) + ' V nominal', '3.7 V per cell'], ['Energy', f(o.energyWh) + ' Wh', 'hover power x time / usable share'], ['Capacity', f(Math.round(o.capacity/100)*100) + ' mAh', 'energy / voltage'],
+      ['Battery mass', f(P.battery*1000) + ' g (' + f(o.battFrac*100) + ' % of the weight)', 'energy / ' + a.specWhKg + ' Wh/kg'], ['Hover current', f(o.hoverCurrent, 1) + ' A (' + f(o.cHover, 1) + ' C)', ''],
+      ['Peak current, all motors', f(o.totalMaxCurrent) + ' A', ''], ['Minimum C rating', f(Math.ceil(o.cMin/5)*5) + ' C', 'peak current / capacity in Ah'], ['Main power lead and plug', o.lead[0] + ', ' + o.lead[1], 'by peak current']]);
+    rows('tPerf', [['Hover power', f(o.hoverPower) + ' W (' + f(o.wPerKg) + ' W/kg)', ''], ['Hover time with payload', f(q.time) + ' min', 'your target'], ['Hover time without payload', f(o.timeNoPayload) + ' min', ''],
+      ['Propeller speed in hover, share of full speed', f(o.hoverThrottle*100) + ' %', 'thrust goes with speed squared, so 1 / &radic;ratio'], ['Steepest tilt that still holds height', f(o.maxTilt) + ' deg', 'acos(1 / ratio)'], ['Smallest frame (motor to motor, diagonal)', f(o.wheelbase, -1) + ' mm', 'propellers 10 % apart'], ['Air density', f(o.rho, 3) + ' kg/m&sup3;', 'from field elevation']]);
+    $('warn').innerHTML = o.warn.length ? '<ul>' + o.warn.map(function(w){ return '<li>' + w + '</li>'; }).join('') + '</ul>' : '<p>No warnings. The design is balanced on paper. Real parts will differ a little, so check it below with data-sheet values.</p>';
+    drawCurve(o, q);
+  }
+  function drawCurve(o, q){
+    var W = 640, H = 270, L = 56, R = 16, T = 16, B = 44, c = o.curve, xmax = c[c.length - 1][0], ymax = 0, best = c[0];
+    c.forEach(function(p){ if (p[1] > ymax){ ymax = p[1]; best = p; } }); ymax *= 1.12;
+    function X(x){ return L + x/xmax*(W - L - R); } function Y(y){ return H - B - y/ymax*(H - T - B); }
+    var s = '<line x1="' + L + '" y1="' + (H - B) + '" x2="' + (W - R) + '" y2="' + (H - B) + '" stroke="currentColor"/><line x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (H - B) + '" stroke="currentColor"/>';
+    for (var i = 0; i <= 4; i++){ var xv = xmax*i/4, yv = ymax/1.12*i/4;
+      s += '<text x="' + X(xv) + '" y="' + (H - B + 18) + '" text-anchor="middle" class="small">' + f(xv*1000) + '</text><text x="' + (L - 8) + '" y="' + (Y(yv) + 4) + '" text-anchor="end" class="small">' + f(yv) + '</text>';
+      s += '<line x1="' + L + '" y1="' + Y(yv) + '" x2="' + (W - R) + '" y2="' + Y(yv) + '" stroke="currentColor" stroke-width="0.4" stroke-dasharray="3 4"/>'; }
+    s += '<polyline fill="none" stroke="currentColor" stroke-width="2" points="' + c.map(function(p){ return X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1); }).join(' ') + '"/>';
+    var bx = o.parts.battery; s += '<circle cx="' + X(bx) + '" cy="' + Y(q.time) + '" r="6" style="fill:var(--accent)"/><text x="' + (X(bx) + 10) + '" y="' + (Y(q.time) + 18) + '" class="small">your design</text>';
+    s += '<circle cx="' + X(best[0]) + '" cy="' + Y(best[1]) + '" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><text x="' + X(best[0]) + '" y="' + (Y(best[1]) - 10) + '" text-anchor="middle" class="small">longest: ' + f(best[1]) + ' min</text>';
+    s += '<text x="' + ((L + W - R)/2) + '" y="' + (H - 6) + '" text-anchor="middle" class="small">battery mass (g), with everything else unchanged</text><text transform="translate(14,' + ((T + H - B)/2) + ') rotate(-90)" text-anchor="middle" class="small">hover time (min)</text>';
+    $('curve').innerHTML = s;
+  }
+  function check(){
+    var a = readA(), r = { dry: num('cDry', 0), battery: num('cBattery', 0), payload: num('cPayload', 0), n: Math.max(3, Math.round(num('cN', 4))), propIn: Math.max(2, num('cProp', 10)), thrustG: num('cThrust', 0), capacity: num('cCap', 0), cells: Math.max(1, Math.round(num('cCells', 4))), elev: Math.max(0, num('qElev', 0)) };
+    if (r.dry + r.battery + r.payload <= 0 || r.capacity <= 0){ $('tCheck').innerHTML = ''; return; }
+    var o = checkParts(r, a), v = o.twr < 1 ? 'It cannot lift off.' : o.twr < 1.5 ? 'Too heavy to control safely.' : o.twr < 2 ? 'It flies, with little in reserve for wind.' : o.twr <= 3 ? 'A sound ratio for camera, mapping, or spray work.' : 'Plenty of thrust. It could carry more, or use smaller motors.';
+    rows('tCheck', [['All-up weight', f(o.mass*1000) + ' g', ''], ['Thrust-to-weight ratio', f(o.twr, 2), v], ['Hover power', f(o.hoverPower) + ' W', ''], ['Hover time', f(o.time) + ' min', 'using ' + f(a.usable*100) + ' % of the pack'],
+      ['Hover current', f(o.hoverCurrent, 1) + ' A', ''], ['Peak current per motor, about', f(o.motorCurrent, 1) + ' A', 'speed controller of at least ' + o.esc + ' A'], ['Minimum C rating', f(Math.ceil(o.cMin/5)*5) + ' C', ''], ['Disc loading', f(o.discLoad) + ' N/m&sup2;', ''], ['Steepest tilt that holds height', f(o.maxTilt) + ' deg', '']]);
+  }
+  $('copy').addEventListener('click', function(){ if (!last || !last.o.ok) return; var o = last.o, q = last.q;
+    $('cDry').value = Math.round((o.mass - o.parts.battery - o.parts.payload)*1000); $('cBattery').value = Math.round(o.parts.battery*1000); $('cPayload').value = q.payload; $('cN').value = q.n; $('cProp').value = o.D;
+    $('cThrust').value = Math.round(o.thrustMaxG/10)*10; $('cCap').value = Math.round(o.capacity/100)*100; $('cCells').value = q.cells; check(); });
+  $('reset').addEventListener('click', function(){ AKEYS.forEach(function(k){ var el = $('a_' + k); if (el) el.value = DEFAULTS[k]; }); run(); check(); });
+  [].forEach.call(document.querySelectorAll('#req input, #assume input'), function(el){ el.addEventListener('input', function(){ run(); check(); }); });
+  [].forEach.call(document.querySelectorAll('#chk input'), function(el){ el.addEventListener('input', check); });
+  AKEYS.forEach(function(k){ var el = $('a_' + k); if (el) el.value = DEFAULTS[k]; });
+  run(); $('copy').click();
+})();
+</script>
+</body>
+</html>
