@@ -1,1 +1,6 @@
+# Normalize all text files to LF in the repository and the working tree.
 * text=auto eol=lf
+
+# Minified or frozen files: keep them as text, but do not show line diffs.
+vendor/three.min.js -diff
+legacy/v0.1/index.html -diff
