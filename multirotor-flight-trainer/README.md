@@ -3,7 +3,7 @@
 A browser-based multirotor flight simulator and survey mission planner for teaching. It is one HTML file. Nothing is installed, and no hardware is needed.
 
 **Run it:** open `index.html`, or visit the GitHub Pages site for this repository:
-`https://YOUR-USERNAME.github.io/multirotor-flight-trainer/`
+`https://alibulentkoc.github.io/multirotor-flight-trainer/`
 
 **Read the manual:** [docs/USER_MANUAL.md](docs/USER_MANUAL.md)
 

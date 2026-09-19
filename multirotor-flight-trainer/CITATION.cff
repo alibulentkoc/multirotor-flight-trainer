@@ -3,14 +3,14 @@ message: "If you use this software, please cite it as below."
 title: "Multirotor Flight Trainer: a browser-based multirotor flight simulator and survey mission planner"
 type: software
 authors:
-  - family-names: "YOUR-FAMILY-NAME"
-    given-names: "YOUR-GIVEN-NAME"
+  - family-names: "Koc"
+    given-names: "Ali Bulent"
     affiliation: "Clemson University"
 version: "0.1.0"
 date-released: "2026-09-18"
 license: MIT
-repository-code: "https://github.com/YOUR-USERNAME/multirotor-flight-trainer"
-url: "https://YOUR-USERNAME.github.io/multirotor-flight-trainer/"
+repository-code: "https://github.com/alibulentkoc/multirotor-flight-trainer"
+url: "https://alibulentkoc.github.io/multirotor-flight-trainer/"
 keywords:
   - UAV
   - multirotor
