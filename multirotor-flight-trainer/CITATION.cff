@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Multirotor Flight Trainer: a browser-based multirotor flight simulator and survey mission planner"
+type: software
+authors:
+  - family-names: "YOUR-FAMILY-NAME"
+    given-names: "YOUR-GIVEN-NAME"
+    affiliation: "Clemson University"
+version: "0.1.0"
+date-released: "2026-09-18"
+license: MIT
+repository-code: "https://github.com/YOUR-USERNAME/multirotor-flight-trainer"
+url: "https://YOUR-USERNAME.github.io/multirotor-flight-trainer/"
+keywords:
+  - UAV
+  - multirotor
+  - flight simulator
+  - mission planning
+  - precision agriculture
+  - education
