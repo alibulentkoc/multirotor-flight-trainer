@@ -7,6 +7,9 @@ A browser-based multirotor flight simulator and survey mission planner for teach
 
 **Read the manual:** [docs/USER_MANUAL.md](docs/USER_MANUAL.md)
 
+**Labs:** step-by-step lab sheets for students, at
+`https://alibulentkoc.github.io/multirotor-flight-trainer/docs/labs/index.html`
+
 ## What it does
 
 - 6-DOF quadcopter physics at 250 Hz, running in the page.

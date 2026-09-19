@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Side panel: two small links under the title. "Labs" opens `docs/labs/index.html` in a new tab, and "Manual" opens `docs/USER_MANUAL.md` on GitHub. The README gains a "Labs" line pointing to the Pages site.
+- Lab 7 (Flying in wind): step 4 and the closing question reworded. Ground speed reads about zero while Airspeed reads less than the 5 m/s slider value, because wind is weaker near the ground. Changed in `docs/LABS.md`, `docs/labs/all.html`, and both Lab 7 files.
 - Movable home point. "Set home" in the flight plan window, followed by a click on the map, moves home. The field image, survey boundary, waypoints, flown track, and georeference shift together, so latitude and longitude do not change. The pilot and the drone move to the new home. Available with a loaded field image or an imported georeferenced plan, with the drone landed and disarmed.
 - "Set home" always answers a press: a note under the button (red when refused or failed), a banner on the map, and a changed cursor while it waits for the click.
 - On the practice field, where home is fixed, "Set home" is greyed out and a note under it says why. It becomes active as soon as a field image or a plan is loaded.

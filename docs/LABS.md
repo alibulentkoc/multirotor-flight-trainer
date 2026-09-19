@@ -252,7 +252,7 @@ The drone helps you with everything in this level. Position hold keeps it still 
 1. Press **T** to take off.
 2. In "Conditions and view", move the **Wind at 10 m** slider to 5 m/s.
 3. Watch the round instrument. The drone leans into the wind to stay in place.
-4. Look at "Airspeed" and "Ground speed". One shows the wind. The other shows zero.
+4. Look at "Ground speed" and "Airspeed". Ground speed reads about zero. Airspeed does not. It reads less than 5, because wind is weaker near the ground.
 5. Press **2** for Altitude hold. The wind now pushes the drone away.
 6. Use the arrow keys to fly back to the ring and hold there.
 7. Press **1**, then **L** to land. Set the wind back to 0.
@@ -261,7 +261,7 @@ The drone helps you with everything in this level. Position hold keeps it still 
 
 **If the drone blows far away:** press **1**, then fly back. Or press **R**.
 
-**Think about it:** the drone was not moving over the ground. Why did Airspeed show 5 m/s?
+**Think about it:** the drone was not moving over the ground. Why did Airspeed still show a value?
 
 ---
 
