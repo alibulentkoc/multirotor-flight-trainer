@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lab 30. Checkride</title>
+<title>Lab 31. Return to home, and why its altitude matters</title>
 <link rel="preload" href="fonts/LM-regular.woff2" as="font" type="font/woff2" crossorigin>
 <style>@font-face{font-family:"Latin Modern";font-style:normal;font-weight:400;font-display:swap;src:url("fonts/LM-regular.woff2") format("woff2")}
 @font-face{font-family:"Latin Modern";font-style:italic;font-weight:400;font-display:swap;src:url("fonts/LM-italic.woff2") format("woff2")}
@@ -55,39 +55,53 @@ input.score{width:3.6rem;font:inherit;padding:1px 6px;border:0;border-bottom:1px
 <body>
 <div class="top"><a class="brand" href="index.html">Multirotor Flight Trainer: Labs</a><span class="nav"><a href="../learn/index.html">Fundamentals</a><a class="btn" href="../../index.html" target="_blank" rel="noopener">Open the trainer</a></span></div>
 <main>
-<h1>Lab 30. Checkride</h1>
-<div class="level">Level 3: On your own</div>
+<h1>Lab 31. Return to home, and why its altitude matters</h1>
+<div class="level">Extra: Failsafes</div>
 <div class="calm"><ul><li>You cannot break anything. This is a simulator. Crashing costs nothing.</li><li>If anything goes wrong, press <strong>R</strong>. The drone returns to the start, good as new.</li><li>There is no time limit. Only your best try counts.</li></ul></div>
 <details class="keys"><summary>Show the keys</summary><pre>W / S   up / down            Arrow Up / Down     forward / back
 A / D   turn left / right    Arrow Left / Right  slide left / right
 T  take off    L  land    R  start over    C  change view    P  flight plan
 1  Position hold    2  Altitude hold    3  Stabilized
 Space  motors on / off       Shift  full stick
+H  return to home, press again to cancel
 </pre><p>Orange arms mark the front of the drone. Pressing <strong>1</strong> at any time gives you all the help back.</p></details>
 <hr>
-<p><strong>Goal:</strong> fly a complete manual flight, from take off to landing, with no help and no reset.</p>
+<p><strong>Goal:</strong> see what return to home (RTH) does, watch it fly into the tree when its altitude is too low, then fix it.</p>
 <p><strong>Start</strong></p>
 <ol>
 <li>Click <strong>Open the trainer</strong> at the top of this page.</li>
 <li>Click once on the picture of the field.</li>
-<li>In the Sensors section, <strong>untick "Landing assist"</strong> and <strong>untick "Obstacle avoidance"</strong>.</li>
-<li>In "Conditions and view", set <strong>Wind at 10 m</strong> to 3 m/s.</li>
-<li>Check that the view at the top reads "View: pilot".</li>
-<li>Press <strong>3</strong> for Stabilized.</li>
+<li>Press <strong>1</strong> for Position hold.</li>
+<li>In the side panel, find the section "Battery and return to home". "RTH altitude" reads 30.</li>
 </ol>
-<p><strong>Do, in one flight</strong></p>
+<p><strong>Do, part 1: a normal return</strong></p>
 <ol>
-<li>Press <strong>Space</strong> to start the motors. Hold <strong>W</strong> to lift off. Climb to about 3 m and hold a steady hover for ten seconds.</li>
-<li>Fly nose-first to the tree and go once around it.</li>
-<li>Descend to about 1.5 m. Fly through the gate and back.</li>
-<li>Turn the nose toward you. Fly back to the orange ring, nose-in.</li>
-<li>Hover over the ring for five seconds.</li>
-<li>Land by hand on the ring, at less than 1 m/s. Press <strong>Space</strong> to switch the motors off.</li>
+<li>Press <strong>T</strong>. Hold <strong>W</strong> and climb to about 10 m. Watch "Altitude AGL".</li>
+<li>Hold the <strong>Up arrow</strong> for about five seconds. The drone flies away from you.</li>
+<li>Press <strong>H</strong>. The box at the top left reads "Returning home".</li>
+<li>Watch what it does, and read the task box at each step. It stops. It climbs straight up to 30 m. It turns its nose toward home. It flies back, comes down, lands, and switches the motors off.</li>
+<li>Do it once more, but this time take the drone back. Take off, fly away, and press <strong>H</strong>. While it climbs, hold the <strong>Right arrow</strong> for a second. The task box says RTH is cancelled. You are flying again.</li>
 </ol>
-<p><strong>You pass when</strong> you complete all six steps in one flight without a crash and without pressing <strong>1</strong> or <strong>R</strong>.</p>
-<p><strong>This is hard.</strong> Most people need many tries. Each step is a lab you have already done. If one step keeps failing, go back to that lab, then return.</p>
-<p><strong>Think about it:</strong> which step needed the most attention? What would you practice before flying a real drone?</p><hr>
-<nav class="foot"><span><a href="lab-29-design-a-mission-to-a-brief.html">Previous: Lab 29</a></span><span><a href="index.html">All labs</a></span><span><a href="lab-31-return-to-home-and-why-its-altitude-matters.html">Next: Lab 31</a></span></nav>
+<p><strong>Do, part 2: set it too low</strong></p>
+<ol>
+<li>Press <strong>R</strong>. Click in the "RTH altitude" box, type 5, and press <strong>Enter</strong>. Then click once on the picture of the field.</li>
+<li>Find the tree. It stands ahead of you and to the left, next to the windsock.</li>
+<li>Press <strong>T</strong>. Climb to about 3 m. Fly past the tree and stop about 5 m behind it, so the tree stands between the drone and the orange ring.</li>
+<li>Look at the small "Front camera" picture. Turn with <strong>A</strong> or <strong>D</strong> until the tree is in the middle of it, with the orange ring behind the tree.</li>
+<li>Check the Sensors section: "Obstacle avoidance" is ticked. Remember that.</li>
+<li>Press <strong>H</strong>. The drone climbs to 5 m and flies straight for home. The tree is about 6 m tall.</li>
+<li>It hits the tree, and a notice says why. If it slips past the thin tip instead, look how close it came, press <strong>R</strong>, and line it up again.</li>
+</ol>
+<p><strong>Do, part 3: fix it</strong></p>
+<ol>
+<li>Press <strong>R</strong>. Measure the tree: take off, fly next to its top, and read "Altitude AGL".</li>
+<li>Choose an RTH altitude that clears the tree with room to spare. 10 m is a good choice here. Type it in, press <strong>Enter</strong>, and click once on the picture of the field.</li>
+<li>Fly behind the tree again, line it up again, and press <strong>H</strong>.</li>
+<li>The drone climbs to your new altitude, passes over the tree, and lands at home.</li>
+</ol>
+<p><strong>You are done when</strong> one return has ended in the tree, and one has passed over it and landed at home.</p>
+<p><strong>Think about it:</strong> obstacle avoidance was on, and the drone still hit the tree. RTH flies a straight line at one height and does not steer around anything. On a real field, what is the tallest thing between you and the far corner? How much room would you add, and why not simply set 120 m every time?</p><hr>
+<nav class="foot"><span><a href="lab-30-checkride.html">Previous: Lab 30</a></span><span><a href="index.html">All labs</a></span><span><a href="lab-32-battery-warnings-and-the-emergency-landing.html">Next: Lab 32</a></span></nav>
 </main>
 </body>
 </html>

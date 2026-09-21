@@ -154,7 +154,8 @@ function renderPlanOut(){
   if (P.mode === 'area' && poly.length < 3) w.push('Mark at least three corners on the map.');
   if (P.mode === 'route' && !route.length) w.push('Click the map to drop waypoints in the order to fly them.');
   if (P.mode === 'area' && P.interval < 2) w.push('Photo interval under 2 s. Many cameras cannot keep up: slow down or fly higher.');
-  if (P.time/60 > P.endurance*0.8) w.push('Needs more than 80 % of the battery. Split the job or change altitude.');
+  var usable = 100 - sim.battCfg.low; // the low battery level sends the drone home, so only the share above it is available to the plan
+  if (P.time/60 > P.endurance*usable/100) w.push('Needs more than ' + usable + ' % of the battery, and the low battery level (' + sim.battCfg.low + ' %) would send it home first. Split the job or change altitude.');
   var top = P.alt; route.forEach(function(r){ if (P.mode === 'route') top = Math.max(top, r.alt); }); if (top*3.281 > 400) w.push('Above the 400 ft AGL ceiling.');
   var far = 0; P.wps.forEach(function(q){ far = Math.max(far, Math.hypot(q.x, q.z)); }); if (far > 450) w.push('Farthest point is ' + Math.round(far) + ' m from you. Holding visual line of sight is doubtful.');
   $('planWarn').textContent = w.join(' '); $('planFly').disabled = !P.ok;
@@ -284,7 +285,7 @@ function setPlanMode(m){ planMode = m; [].forEach.call($('planModes').children, 
 function togglePlan(){ var el = $('plan'); el.hidden = !el.hidden; if (!el.hidden) computePlan(); }
 $('bPlan').addEventListener('click', function(e){ togglePlan(); e.target.blur(); });
 $('planClose').addEventListener('click', togglePlan);
-$('simSpeed').addEventListener('change', function(e){ timeScale = +e.target.value; });
+$('simSpeed').addEventListener('change', function(e){ timeScale = +e.target.value; e.target.blur(); }); // blur so the P key works again at once
 $('planFly').addEventListener('click', function(){
   if (!plan || !plan.ok) return;
   if (sim.crashed) startDrill('free');
@@ -293,6 +294,6 @@ $('planFly').addEventListener('click', function(){
 });
 $('planStop').addEventListener('click', function(){ sim.stopMission(); });
 function planTick(dt){ mapT += dt; if (mapT > 0.2){ mapT = 0;
-  if (sim.auto === 'mission'){ var l = track[track.length - 1]; if (!l || Math.hypot(l[0] - sim.pos[0], l[1] - sim.pos[2]) > 1) track.push([sim.pos[0], sim.pos[2]]); }
+  if (sim.auto === 'mission' || sim.auto === 'rth'){ var l = track[track.length - 1]; if (!l || Math.hypot(l[0] - sim.pos[0], l[1] - sim.pos[2]) > 1) track.push([sim.pos[0], sim.pos[2]]); }
   drawMap(); } }
 

@@ -75,6 +75,7 @@ function drillStep(dt){
   }
 }
 sim.onEvent = function(ev){
+  failsafeEvent(ev);
   if (ev === 'crash'){
     if (drill.id !== 'free' && drill.phase !== 'done') drill.phase = 'failed';
     showNotice('fail', 'Crashed', sim.crashed + ' Press R to reset.');

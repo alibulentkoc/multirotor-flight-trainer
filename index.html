@@ -46,6 +46,19 @@ body{
   background:var(--panel); border:1px solid var(--line); border-left:6px solid var(--accent);
   padding:16px 22px; border-radius:4px; max-width:min(440px,86%); display:none;
 }
+#battBox{
+  position:absolute; left:12px; top:58px; width:230px; pointer-events:none;
+  background:var(--panel); color:var(--ink); border:1px solid var(--line); border-left:6px solid var(--ok); border-radius:4px; padding:5px 10px 7px;
+}
+.battText{display:flex; gap:10px; align-items:baseline; font-size:15px; font-weight:600; font-variant-numeric:tabular-nums}
+.battText b{margin-left:auto; font-weight:700; font-size:13px; letter-spacing:.04em}
+.battBar{height:8px; margin-top:4px; background:var(--chip); border:1px solid var(--line); border-radius:2px; overflow:hidden}
+.battBar i{display:block; height:100%; width:100%; background:var(--ok)}
+#battBox.warning{border-left-color:#e09400} #battBox.warning .battBar i{background:#e09400}
+#battBox.critical{border-color:var(--warn); border-left-color:var(--warn); border-width:2px 2px 2px 6px} #battBox.critical .battBar i{background:var(--warn)}
+#battBox.critical b{color:var(--warn)}
+#battMsg.warn{color:var(--warn); font-weight:600}
+#battMsg:empty, #assignMsg:empty{display:none}
 #notice h2{margin:0 0 4px; font-size:24px; font-weight:700}
 #notice p{margin:0; color:var(--muted)}
 #notice.fail{border-left-color:var(--warn)}
@@ -115,7 +128,8 @@ button, select{
 button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 button[aria-pressed="true"]{background:var(--ink); color:var(--panel)}
 button:disabled, button[aria-disabled="true"]{opacity:.45; cursor:default}
-.row{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:8px}
+.row{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px}
+#bRth{grid-column:span 2}
 .modehint{font-size:14px; color:var(--muted); margin:8px 0 0; min-height:38px}
 .drills{display:grid; gap:6px}
 .drills button{display:flex; justify-content:space-between; align-items:baseline; text-align:left; padding:8px 10px}
@@ -145,6 +159,10 @@ td:last-child,th:last-child{text-align:right}
 .map td{vertical-align:middle}
 .map .bar{width:70px}
 .map .bar i{background:var(--ok)}
+.map button{padding:2px 8px; font-size:14px} .map select{padding:2px 4px; font-size:14px}
+.map .lamp{display:inline-block; min-width:34px; text-align:center; font-weight:700; font-size:12px; border:1px solid var(--line); border-radius:3px; padding:1px 4px; color:var(--muted)}
+.map .lamp.on{background:var(--ok); color:#fff; border-color:transparent}
+#padActions td:last-child{white-space:nowrap}
 .note{font-size:14px; color:var(--muted); margin:8px 0 0}
 .scroll{overflow-x:auto}
 @media (max-width:820px){
@@ -202,7 +220,7 @@ td:last-child,th:last-child{text-align:right}
         <div class="row3" style="grid-template-columns:1fr 1fr"><button id="expKML">Export KML</button><button id="expCSV">Export CSV</button></div>
         <p class="note" id="exportMsg" style="margin-top:4px"></p>
         <textarea id="exportText" readonly hidden aria-label="Exported plan text"></textarea>
-        <p class="note">Move the right stick at any time to take over. At 20 % battery the drone abandons the plan and returns home.</p>
+        <p class="note">Move the right stick at any time to take over. At the low battery level (side panel, 20 % unless you change it) the drone abandons the plan and returns home at the RTH altitude, or at its present height if that is higher.</p>
       </div>
     </div>
     <details>
@@ -229,6 +247,7 @@ td:last-child,th:last-child{text-align:right}
       </dl>
     </details>
   </div>
+  <div id="battBox" class="ok" role="status" aria-label="Battery"><div class="battText"><span id="battPct">100 %</span><span id="battCell">4.20 V/cell</span><b id="battState">OK</b></div><div class="battBar"><i id="battFill"></i></div></div>
   <div id="notice" role="status"><h2></h2><p></p></div>
   <div class="pip" id="pipF"><span>Front camera</span></div>
   <div class="pip" id="pipD"><span>Down camera</span></div>
@@ -252,8 +271,9 @@ td:last-child,th:last-child{text-align:right}
     <div class="row">
       <button id="bArm">Arm</button>
       <button id="bTakeoff">Take off</button>
-      <button id="bLand">Land</button>
       <button id="bReset">Reset</button>
+      <button id="bLand">Land</button>
+      <button id="bRth" title="Return to home (H)">Return to home</button>
     </div>
     <button id="bPlan" style="width:100%; margin-top:8px">Open flight plan</button>
   </section>
@@ -306,6 +326,27 @@ td:last-child,th:last-child{text-align:right}
   </section>
 
   <section>
+    <h2 class="s">Battery and return to home</h2>
+    <dl>
+      <dt>Battery state</dt><dd id="tBatState">OK</dd>
+      <dt>Voltage</dt><dd id="tVolt">16.8 V</dd>
+      <dt>Per cell</dt><dd id="tCell">4.20 V</dd>
+      <dt>Current</dt><dd id="tAmp">0 A</dd>
+      <dt>Time left at this draw</dt><dd id="tMin">n/a</dd>
+    </dl>
+    <div class="f" style="margin-top:10px">
+      <label for="rthAlt">RTH altitude (m)</label><input type="number" id="rthAlt" min="5" max="120" value="30">
+      <label for="bWarn">Warning level (%)</label><input type="number" id="bWarn" min="5" max="60" value="30">
+      <label for="bLow">Low level: return home (%)</label><input type="number" id="bLow" min="5" max="60" value="20">
+      <label for="bCrit">Critical level: land now (%)</label><input type="number" id="bCrit" min="5" max="60" value="10">
+    </div>
+    <p class="note" id="battMsg" role="status"></p>
+    <label class="chk"><input type="checkbox" id="autoRth" checked> Automatic RTH on low battery</label>
+    <label class="chk"><input type="checkbox" id="battBeep"> Beep at each battery level</label>
+    <p class="note">RTH climbs to the RTH altitude if it is below it, flies straight home, and lands. It does not steer around obstacles, so the RTH altitude must clear everything on the way. Move the right stick or press H to cancel. The emergency landing at the critical level cannot be cancelled, but the right stick still moves the drone so you can pick a clear spot.</p>
+  </section>
+
+  <section>
     <h2 class="s">Conditions and view</h2>
     <label class="ctl">Wind at 10 m<input type="range" id="wind" min="0" max="12" step="0.5" value="0"><output id="windOut">0 m/s</output></label>
     <label class="ctl">Wind from<input type="range" id="windDir" min="0" max="345" step="15" value="270"><output id="windDirOut">270 deg</output></label>
@@ -328,6 +369,7 @@ td:last-child,th:last-child{text-align:right}
       <tr><td>Shift</td><td>Hold for full stick deflection</td></tr>
       <tr><td>Space</td><td>Arm or disarm</td></tr>
       <tr><td>T / L</td><td>Automatic take off / land</td></tr>
+      <tr><td>H</td><td>Return to home, or cancel it</td></tr>
       <tr><td>1 2 3</td><td>Position, altitude, stabilized mode</td></tr>
       <tr><td>C</td><td>Change camera</td></tr>
       <tr><td>P</td><td>Open or close the flight plan</td></tr>
@@ -339,6 +381,8 @@ td:last-child,th:last-child{text-align:right}
     <summary>Controller setup</summary>
     <p class="note" id="padStatus">No controller detected. Plug in a USB game controller or RC transmitter, then move a stick.</p>
     <div class="scroll"><table class="map" id="padMap"></table></div>
+    <div class="scroll"><table class="map" id="padActions"></table></div>
+    <p class="note" id="assignMsg" role="status"></p>
     <label class="note" style="display:block"><input type="checkbox" id="thrCentered" checked> Throttle stick springs back to center (game controller). Clear this for an RC transmitter.</label>
   </details>
 
@@ -401,8 +445,38 @@ var PARAMS = {
   maxTilt: 0.52,                 // stabilized and altitude modes (rad)
   maxTiltPos: 0.40,              // position hold (rad)
   yawRateMax: 2.1,               // rad/s
+  maxTiltAuto: 0.50,             // planned flights and return to home (rad)
   vMax: 4.0, vzMax: 1.5,         // position hold speed limits (m/s)
-  batterySeconds: 600
+  landRate: 0.6, landRateNear: 0.3, landNearAlt: 0.6, // automatic landing: sink rate, and the slower rate below landNearAlt (m/s, m)
+  batterySeconds: 600,           // endurance in a steady hover (s)
+  rth: {                         // return to home
+    alt: 30, altMin: 5, altMax: 120, // default RTH altitude and its limits (m)
+    speed: 6,                    // cruise speed over the ground (m/s)
+    climb: 2.5, descend: 2.0,    // climb and descent rates (m/s)
+    kAlt: 1.2,                   // height error to climb rate gain (1/s)
+    altTol: 1.0,                 // the climb is complete within this of the target height (m)
+    kApproach: 0.7,              // distance to speed gain close to home (1/s)
+    arrive: 0.8,                 // start the descent within this distance of home (m)
+    nearHome: 3,                 // closer than this, skip the climb and just land (m)
+    hdgDist: 3,                  // turn the nose toward home beyond this distance (m)
+    landAlt: 2.5,                // below this height the descent slows to the landing rate (m)
+    minSpeed: 0.5,               // slowest ground speed that still counts as making headway (m/s)
+    cancelStick: 1/3             // right stick deflection that cancels RTH
+  },
+  batt: {                        // battery model and failsafes
+    cells: 4,                    // cells in series
+    ocv: [[0, 3.30], [10, 3.52], [50, 3.72], [90, 4.03], [100, 4.20]], // open-circuit volts per cell against percent
+    rCell: 0.010,                // internal resistance per cell (ohm)
+    hoverCurrent: 14,            // current in a steady hover (A). Capacity follows from batterySeconds
+    idleFrac: 0.1, loadExp: 1.5, // drain = idleFrac + (1 - idleFrac)*(thrust/weight)^loadExp, as a share of hover drain
+    tauDraw: 5,                  // smoothing of the draw behind "minutes remaining" (s)
+    warn: 30, low: 20, crit: 10, // default thresholds (percent)
+    min: 5, max: 60,             // limits for any threshold (percent)
+    returnMargin: 10,            // warn when battery < return estimate + this (percent)
+    estimateEvery: 0.5,          // how often the return estimate is refreshed in flight (s)
+    landRate: 2.0,               // emergency landing sink rate above landSlowAlt (m/s)
+    landSlowAlt: 3               // below this the emergency landing uses the normal landing rates (m)
+  }
 };
 var MOTORS = [ // x, z, spin (+1 = counter clockwise seen from above)
   [-1, -1, -1], [1, -1, 1], [1, 1, -1], [-1, 1, 1]
@@ -416,37 +490,138 @@ function qconj(q){ return [-q[0], -q[1], -q[2], q[3]]; }
 function qrot(q, v){ var p = qmul(qmul(q, [v[0], v[1], v[2], 0]), qconj(q)); return [p[0], p[1], p[2]]; }
 function qaxis(ax, ang){ var s = Math.sin(ang/2); return [ax[0]*s, ax[1]*s, ax[2]*s, Math.cos(ang/2)]; }
 function clamp(x, a, b){ return x < a ? a : (x > b ? b : x); }
+// Mean wind speed at height h as a share of the 10 m value (log profile down to the canopy).
+function windProfile(h){ return clamp(Math.log((Math.max(0, h) + 0.1)/0.03)/Math.log(10/0.03), 0.15, 1.3); }
+function dragAcc(va){ return (PARAMS.kd1 + PARAMS.kd2*va)*va; }
 
-function Sim(){ this.mode = 'pos'; this.wind = 0; this.windDir = 270; this.avoid = null; this.avoiding = false; this.landAssist = true; this.assisting = false; this.thrCentered = true; this.onEvent = function(){}; this.reset(); }
+// ---- battery: pure functions ----
+// Drain as a share of the hover drain, from total thrust over weight.
+function battLoad(thrustRatio){ var B = PARAMS.batt; return B.idleFrac + (1 - B.idleFrac)*Math.pow(Math.max(0, thrustRatio), B.loadExp); }
+// Open-circuit volts per cell at a given percent, by linear interpolation in PARAMS.batt.ocv.
+function battOcv(pct){
+  var c = PARAMS.batt.ocv, p = clamp(pct, 0, 100);
+  for (var i = 1; i < c.length; i++) if (p <= c[i][0]) return c[i - 1][1] + (c[i][1] - c[i - 1][1])*(p - c[i - 1][0])/(c[i][0] - c[i - 1][0]);
+  return c[c.length - 1][1];
+}
+// Pack voltage under load: open-circuit voltage minus the drop across the internal resistance.
+function battVolts(pct, amps){ var B = PARAMS.batt; return Math.max(0, B.cells*(battOcv(pct) - amps*B.rCell)); }
+// Threshold settings are valid when warning > low > critical and all lie within the limits. Returns '' or the reason.
+function battCfgError(warn, low, crit){
+  var B = PARAMS.batt, v = [warn, low, crit];
+  for (var i = 0; i < 3; i++) if (typeof v[i] !== 'number' || !isFinite(v[i]) || v[i] < B.min || v[i] > B.max) return 'Each battery level must be between ' + B.min + ' and ' + B.max + ' percent.';
+  if (!(warn > low && low > crit)) return 'Battery levels must run warning > low > critical.';
+  return '';
+}
+// Battery percent needed to return home from (x, z) at height h: the climb to the RTH altitude, the cruise
+// home against the mean wind at that height, and the descent. Gusts are left out, which is what the margin is for.
+// pct is Infinity when the drone cannot make headway against the wind.
+function rthEstimate(x, z, h, rthAlt, wind, windDir){
+  var P = PARAMS, R = P.rth, d = Math.hypot(x, z), top = d < R.nearHome ? h : Math.max(h, clamp(rthAlt, R.altMin, R.altMax));
+  var tClimb = (top - h)/R.climb, eClimb = tClimb*battLoad(1 + dragAcc(R.climb)/P.g);
+  var tDown = Math.max(0, top - R.landAlt)/R.descend, eDown = tDown*battLoad(1 - dragAcc(R.descend)/P.g);
+  var hl = Math.min(top, R.landAlt), tLand = Math.max(0, hl - P.landNearAlt)/P.landRate + Math.min(hl, P.landNearAlt)/P.landRateNear, eLand = tLand*battLoad(1);
+  var tCruise = 0, eCruise = 0;
+  if (d > R.arrive){
+    var th = windDir*Math.PI/180, w = wind*windProfile(top), wx = -Math.sin(th)*w, wz = Math.cos(th)*w, ux = -x/d, uz = -z/d;
+    var aMax = P.g*Math.tan(P.maxTiltAuto), sp = R.speed, a = 0, n = 0;
+    for (; n <= 40; n++){ a = dragAcc(Math.hypot(ux*sp - wx, uz*sp - wz)); if (a <= aMax) break; sp -= R.speed/40; }
+    if (n > 40 || sp < R.minSpeed) return { pct: Infinity, time: Infinity, dist: d, top: top, speed: 0 };
+    tCruise = d/sp; eCruise = tCruise*battLoad(Math.sqrt(1 + a*a/(P.g*P.g)));
+  }
+  return { pct: 100*(eClimb + eCruise + eDown + eLand)/P.batterySeconds, time: tClimb + tCruise + tDown + tLand, dist: d, top: top, speed: tCruise ? d/tCruise : 0 };
+}
+
+function Sim(){
+  this.mode = 'pos'; this.wind = 0; this.windDir = 270; this.avoid = null; this.avoiding = false; this.landAssist = true; this.assisting = false; this.thrCentered = true;
+  this.rthAlt = PARAMS.rth.alt; this.battCfg = { warn: PARAMS.batt.warn, low: PARAMS.batt.low, crit: PARAMS.batt.crit, autoRth: true };
+  this.onEvent = function(){}; this.reset();
+}
 Sim.prototype.reset = function(){
   this.pos = [0, 0, 0]; this.v = [0, 0, 0]; this.q = [0, 0, 0, 1]; this.w = [0, 0, 0];
   this.F = [0, 0, 0, 0]; this.armed = false; this.onGround = true; this.crashed = null;
-  this.auto = null; this.psiSp = 0; this.posSp = null; this.altSp = null; this.mission = null; this.photos = [];
+  this.auto = null; this.autoReason = null; this.rth = null; this.psiSp = 0; this.posSp = null; this.altSp = null; this.mission = null; this.photos = [];
   this.iv = [0, 0, 0]; this.batt = 100; this.t = 0; this.lastTouchdown = null;
+  this.amps = 0; this.drainAvg = 0; this.needPct = 0; this.needT = 0; this.battLatch = { warn: false, low: false, crit: false, margin: false };
 };
 Sim.prototype.yaw = function(){ var f = qrot(this.q, [0, 0, -1]); return Math.atan2(-f[0], -f[2]); };
 // Command set kept deliberately close to a Tello-style text API.
+// During an emergency landing (auto === 'critland') only a disarm or a motor kill gets through.
 Sim.prototype.command = function(c){
   if (this.crashed) return;
-  if (c === 'arm'){ if (this.onGround){ this.armed = true; } }
-  else if (c === 'disarm'){ this.armed = false; this.auto = null; this.mission = null; }
+  if (c === 'disarm'){ this.armed = false; this.auto = null; this.mission = null; this.rth = null; }
+  else if (c === 'emergency'){ this.armed = false; this.auto = null; this.rth = null; }
+  else if (this.auto === 'critland') return;
+  else if (c === 'arm'){ if (this.onGround){ this.armed = true; } }
   else if (c === 'takeoff'){ if (this.onGround){ this.armed = true; this.auto = 'takeoff'; this.altSp = 1.2; this.posSp = [this.pos[0], this.pos[2]]; } }
-  else if (c === 'land'){ if (!this.onGround){ this.auto = 'land'; this.posSp = [this.pos[0], this.pos[2]]; } }
-  else if (c === 'emergency'){ this.armed = false; this.auto = null; }
+  else if (c === 'land'){ if (!this.onGround){ this.auto = 'land'; this.autoReason = 'pilot'; this.mission = null; this.rth = null; this.posSp = [this.pos[0], this.pos[2]]; } }
+  else if (c === 'rth') this.startRth('pilot');
+  else if (c === 'cancel_rth') this.cancelRth();
+};
+// Return to home. Home is the sim origin. Below the RTH altitude the drone climbs to it first, above it the
+// drone keeps its height. It then flies straight home, descends, lands, and disarms. The vertical avoidance
+// limits still apply, but nothing routes around an obstacle on the way.
+Sim.prototype.startRth = function(reason){
+  if (this.crashed || this.onGround || !this.armed || this.auto === 'critland') return;
+  var R = PARAMS.rth, h = this.pos[1], top = Math.hypot(this.pos[0], this.pos[2]) < R.nearHome ? h : Math.max(h, clamp(this.rthAlt, R.altMin, R.altMax));
+  this.mission = null; this.auto = 'rth'; this.autoReason = reason; this.posSp = null; this.altSp = null;
+  this.rth = { phase: h < top - R.altTol ? 'climb' : 'cruise', alt: top, hold: [this.pos[0], this.pos[2]], hdg: null };
+  this.onEvent('rth');
+};
+Sim.prototype.cancelRth = function(){
+  if (this.auto !== 'rth') return;
+  this.auto = null; this.autoReason = null; this.rth = null; this.posSp = null; this.altSp = null; this.onEvent('rth_cancel');
+};
+Sim.prototype.rthVel = function(){
+  var R = PARAMS.rth, r = this.rth, p = this.pos, d = Math.hypot(p[0], p[2]);
+  var hold = function(t){ return [clamp(1.2*(t[0] - p[0]), -2, 2), clamp(1.2*(t[1] - p[2]), -2, 2)]; };
+  if (r.phase === 'climb'){ if (p[1] < r.alt - R.altTol) return hold(r.hold); r.phase = 'cruise'; }
+  if (r.phase === 'cruise'){
+    if (d < R.arrive) r.phase = 'descend';
+    else { if (d > R.hdgDist) r.hdg = Math.atan2(p[0], p[2]); var sp = Math.min(R.speed, R.kApproach*d + 0.2); return [-p[0]/d*sp, -p[2]/d*sp]; }
+  }
+  if (r.phase === 'descend' && p[1] < R.landAlt) r.phase = 'land';
+  return hold([0, 0]);
+};
+// Emergency landing in place. The sim controls the descent, the pilot keeps horizontal stick and yaw.
+Sim.prototype.startCritLand = function(reason){
+  this.mission = null; this.rth = null; this.auto = 'critland'; this.autoReason = reason; this.posSp = null; this.altSp = null;
+};
+// Battery failsafes. Each level announces itself once. The low level acts once, so a pilot who cancels the
+// automatic RTH is not overruled again. The critical level acts whenever the drone is in the air.
+Sim.prototype.battCheck = function(){
+  if (!this.armed) return;
+  var c = this.battCfg, L = this.battLatch, air = !this.onGround, busy = this.auto === 'critland';
+  if (!L.warn && this.batt < c.warn){ L.warn = true; this.onEvent('batt_warn'); }
+  if (air && !busy){
+    var lowNow = !L.low && this.batt < c.low;
+    if (lowNow || this.t >= this.needT){ this.needT = this.t + PARAMS.batt.estimateEvery; this.needPct = rthEstimate(this.pos[0], this.pos[2], this.pos[1], this.rthAlt, this.wind, this.windDir).pct; }
+    var need = this.needPct;
+    if (!L.margin && this.auto !== 'rth' && this.batt < need + PARAMS.batt.returnMargin){ L.margin = true; this.onEvent('batt_margin'); }
+    if (lowNow){
+      L.low = true; this.onEvent('batt_low');
+      if (c.autoRth){
+        if (need > this.batt){ this.startCritLand('unreachable'); this.onEvent('batt_unreachable'); }
+        else this.startRth('battery');
+      }
+    }
+  }
+  if (this.batt < c.crit){
+    if (!L.crit){ L.crit = true; this.onEvent('batt_crit'); }
+    if (air && this.auto !== 'critland') this.startCritLand('critical');
+  }
 };
 // Wind speed is given at 10 m and follows a log profile down to the canopy.
 // windDir is the compass direction the wind comes FROM (0 = north = -Z, 90 = east = +X).
 // Mission: wps = [{x, y, z, survey}], y is height above ground. A leg ending at a survey
 // waypoint triggers a photo every `trig` meters of travel along the leg.
 Sim.prototype.startMission = function(wps, speed, trig){
-  if (this.crashed || !wps.length) return;
-  this.mission = { wps: wps, idx: 0, speed: speed, trig: trig, from: [this.pos[0], this.pos[2]], shot: null, hdg: null, rth: false };
-  this.photos = []; this.armed = true; this.auto = 'mission'; this.iv = [0, 0, 0];
+  if (this.crashed || !wps.length || this.auto === 'critland') return;
+  this.mission = { wps: wps, idx: 0, speed: speed, trig: trig, from: [this.pos[0], this.pos[2]], shot: null, hdg: null };
+  this.photos = []; this.armed = true; this.auto = 'mission'; this.autoReason = null; this.rth = null; this.iv = [0, 0, 0];
 };
 Sim.prototype.stopMission = function(){ if (this.auto === 'mission'){ this.auto = null; this.mission = null; this.posSp = null; this.altSp = null; } };
 Sim.prototype.missionVel = function(dt){
-  var M = this.mission, wp = M.wps[M.idx], p = this.pos, v = [0, 0];
-  if (this.batt < 20 && !M.rth && M.idx < M.wps.length - 1){ M.rth = true; M.idx = M.wps.length - 1; M.from = [p[0], p[2]]; M.shot = null; wp = M.wps[M.idx]; this.onEvent('rth'); }
+  var M = this.mission, wp = M.wps[M.idx], p = this.pos, v = [0, 0]; // low battery is handled by battCheck, as in manual flight
   var lx = wp.x - M.from[0], lz = wp.z - M.from[1], L = Math.hypot(lx, lz), altOk = Math.abs(wp.y - p[1]) < 2.5, rem = 0;
   if (L > 0.01){
     var tx = lx/L, tz = lz/L, rx = p[0] - M.from[0], rz = p[2] - M.from[1];
@@ -455,33 +630,35 @@ Sim.prototype.missionVel = function(dt){
     if (altOk){
       var sp = Math.min(M.speed, 0.7*rem + 0.4), cc = clamp(1.0*cross, -2, 2);
       v = [tx*sp + tz*cc, tz*sp - tx*cc];
-      if (wp.survey && !M.rth && along >= 0 && (M.shot === null || along - M.shot >= M.trig)){
+      if (wp.survey && along >= 0 && (M.shot === null || along - M.shot >= M.trig)){
         M.shot = along; this.photos.push({ x: p[0], z: p[2], y: p[1], psi: this.yaw() });
       }
     }
   }
   if (altOk && rem < 1.0){
-    if (wp.photo && !M.snapped && !M.rth){ M.snapped = true; this.photos.push({ x: p[0], z: p[2], y: p[1], psi: this.yaw() }); }
-    if (wp.hold > 0 && !M.rth){ M.holdT = (M.holdT || 0) + dt; if (M.holdT < wp.hold) return [clamp(1.2*(wp.x - p[0]), -2, 2), clamp(1.2*(wp.z - p[2]), -2, 2)]; }
+    if (wp.photo && !M.snapped){ M.snapped = true; this.photos.push({ x: p[0], z: p[2], y: p[1], psi: this.yaw() }); }
+    if (wp.hold > 0){ M.holdT = (M.holdT || 0) + dt; if (M.holdT < wp.hold) return [clamp(1.2*(wp.x - p[0]), -2, 2), clamp(1.2*(wp.z - p[2]), -2, 2)]; }
     M.holdT = 0; M.snapped = false;
     M.from = [wp.x, wp.z]; M.shot = null; M.idx++;
-    if (M.idx >= M.wps.length){ this.mission = null; this.auto = 'land'; this.posSp = [wp.x, wp.z]; this.onEvent('missiondone'); }
+    if (M.idx >= M.wps.length){ this.mission = null; this.auto = 'land'; this.autoReason = 'mission'; this.posSp = [wp.x, wp.z]; this.onEvent('missiondone'); }
   }
   return v;
 };
 Sim.prototype.windVec = function(h){
   if (h === undefined) h = this.pos[1];
-  var prof = clamp(Math.log((Math.max(0, h) + 0.1)/0.03)/Math.log(10/0.03), 0.15, 1.3);
-  var s = this.wind*prof*(1 + 0.30*Math.sin(0.7*this.t) + 0.18*Math.sin(1.9*this.t + 1));
+  var s = this.wind*windProfile(h)*(1 + 0.30*Math.sin(0.7*this.t) + 0.18*Math.sin(1.9*this.t + 1));
   var th = this.windDir*Math.PI/180, dx = -Math.sin(th), dz = Math.cos(th), c = 0.25*s*Math.sin(0.23*this.t);
   return [dx*s - dz*c, 0, dz*s + dx*c];
 };
 Sim.prototype.step = function(dt, s){
   var P = PARAMS, i; this.t += dt; this.avoiding = false; this.assisting = false;
   if (this.crashed){ this.F = [0, 0, 0, 0]; return; }
+  this.battCheck();
   var st = { thr: s.thr, yaw: s.yaw, pitch: s.pitch, roll: s.roll };
   if (this.auto === 'mission' && Math.hypot(s.roll, s.pitch) > 0.3){ this.stopMission(); this.onEvent('takeover'); }
-  if (this.auto){ st = { thr: 0, yaw: this.auto === 'land' ? 0 : s.yaw, pitch: 0, roll: 0 }; }
+  if (this.auto === 'rth' && Math.hypot(s.roll, s.pitch) > P.rth.cancelStick) this.cancelRth();
+  if (this.auto === 'critland'){ st = { thr: 0, yaw: s.yaw, pitch: s.pitch, roll: s.roll }; }
+  else if (this.auto){ st = { thr: 0, yaw: this.auto === 'land' ? 0 : s.yaw, pitch: 0, roll: 0 }; }
   var mode = this.auto ? 'pos' : this.mode;
   var q = this.q, up = qrot(q, [0, 1, 0]), psi = this.yaw();
   var mg = P.m*P.g, Fmax = mg*P.twr/4, Fcmd = [0, 0, 0, 0];
@@ -494,10 +671,11 @@ Sim.prototype.step = function(dt, s){
       T = 0.12*mg; this.iv = [0, 0, 0]; this.psiSp = psi; this.altSp = null; this.posSp = null;
     } else {
       if (this.onGround) this.psiSp = psi;
-      var mv = this.auto === 'mission' ? this.missionVel(dt) : null;
+      var mv = this.auto === 'mission' ? this.missionVel(dt) : (this.auto === 'rth' ? this.rthVel() : null);
       var yawRate = -st.yaw*P.yawRateMax;
-      if (this.auto === 'mission' && this.mission.hdg !== null){
-        var dpsi = this.mission.hdg - this.psiSp; dpsi = Math.atan2(Math.sin(dpsi), Math.cos(dpsi)); yawRate = clamp(2*dpsi, -1.2, 1.2);
+      var hdgSp = this.auto === 'mission' && this.mission ? this.mission.hdg : (this.auto === 'rth' ? this.rth.hdg : null);
+      if (hdgSp !== null){
+        var dpsi = hdgSp - this.psiSp; dpsi = Math.atan2(Math.sin(dpsi), Math.cos(dpsi)); yawRate = clamp(2*dpsi, -1.2, 1.2);
       }
       this.psiSp += yawRate*dt;
       var rollCmd, pitchCmd;
@@ -524,7 +702,7 @@ Sim.prototype.step = function(dt, s){
         var ex = vsx - this.v[0], ez = vsz - this.v[2];
         this.iv[0] = clamp(this.iv[0] + 1.2*ex*dt, -3, 3); this.iv[2] = clamp(this.iv[2] + 1.2*ez*dt, -3, 3);
         var ax = 2.5*ex + this.iv[0], az = 2.5*ez + this.iv[2];
-        var tl = mv ? 0.5 : P.maxTiltPos;
+        var tl = mv ? P.maxTiltAuto : P.maxTiltPos;
         pitchCmd = clamp(Math.atan2(ax*fw[0] + az*fw[1], P.g), -tl, tl);
         rollCmd  = clamp(Math.atan2(ax*rt[0] + az*rt[1], P.g), -tl, tl);
       } else {
@@ -539,7 +717,9 @@ Sim.prototype.step = function(dt, s){
       } else {
         var vzSp;
         if (this.auto === 'mission' && this.mission){ vzSp = clamp(1.2*(this.mission.wps[this.mission.idx].y - this.pos[1]), -2, 3); this.altSp = null; }
-        else if (this.auto === 'land'){ vzSp = this.pos[1] > 0.6 ? -0.6 : -0.3; this.altSp = null; }
+        else if (this.auto === 'land' || (this.auto === 'rth' && this.rth.phase === 'land')){ vzSp = this.pos[1] > P.landNearAlt ? -P.landRate : -P.landRateNear; this.altSp = null; }
+        else if (this.auto === 'rth'){ vzSp = clamp(P.rth.kAlt*((this.rth.phase === 'descend' ? 0 : this.rth.alt) - this.pos[1]), -P.rth.descend, P.rth.climb); this.altSp = null; }
+        else if (this.auto === 'critland'){ vzSp = this.pos[1] > P.batt.landSlowAlt ? -P.batt.landRate : (this.pos[1] > P.landNearAlt ? -P.landRate : -P.landRateNear); this.altSp = null; }
         else if (this.auto === 'takeoff'){ vzSp = clamp(1.5*(this.altSp - this.pos[1]), -1, 1); if (this.pos[1] > this.altSp - 0.1) this.auto = null; }
         else if (Math.abs(st.thr) > 0.05){ vzSp = st.thr*P.vzMax; this.altSp = null; }
         else {
@@ -581,7 +761,9 @@ Sim.prototype.step = function(dt, s){
     this.F[i] += (Fcmd[i] - this.F[i])*k; var Fi = this.F[i], m2 = MOTORS[i];
     Tact += Fi; ta[0] -= m2[1]*P.d*Fi; ta[2] += m2[0]*P.d*Fi; ta[1] -= m2[2]*P.kq*Fi;
   }
-  if (this.armed) this.batt = Math.max(0, this.batt - 100*dt*(0.1 + 0.9*Math.pow(Tact/mg, 1.5))/P.batterySeconds);
+  var load = this.armed ? battLoad(Tact/mg) : 0, drain = 100*load/P.batterySeconds; // percent per second
+  this.batt = Math.max(0, this.batt - drain*dt); this.amps = P.batt.hoverCurrent*load;
+  this.drainAvg += (drain - this.drainAvg)*Math.min(1, dt/P.batt.tauDraw);
   if (this.batt <= 0 && !this.onGround && this.auto !== 'land') this.command('land');
 
   var wv = this.windVec(), vr = [this.v[0] - wv[0], this.v[1], this.v[2] - wv[2]];
@@ -609,7 +791,7 @@ Sim.prototype.step = function(dt, s){
     else if (hs > 2.5 && !this.landAssist) this.crash('Touched down while moving sideways at ' + hs.toFixed(1) + ' m/s.');
     else {
       this.onGround = true; this.lastTouchdown = { speed: vi, x: this.pos[0], z: this.pos[2] };
-      if (this.auto === 'land'){ this.armed = false; this.auto = null; }
+      if (this.auto === 'land' || this.auto === 'rth' || this.auto === 'critland'){ this.armed = false; this.auto = null; this.rth = null; }
       this.onEvent('touchdown');
     }
   }
@@ -619,10 +801,16 @@ Sim.prototype.crash = function(msg){ this.crashed = msg; this.armed = false; thi
 Sim.prototype.telemetry = function(){
   var f = qrot(this.q, [0, 0, -1]), r = qrot(this.q, [1, 0, 0]), u = qrot(this.q, [0, 1, 0]);
   var hdg = (Math.atan2(f[0], -f[2])*180/Math.PI + 360) % 360;
+  var B = PARAMS.batt, c = this.battCfg, volts = battVolts(this.batt, this.amps);
   return {
     pitch: Math.asin(clamp(f[1], -1, 1)), roll: Math.atan2(-r[1], u[1]), heading_deg: hdg,
     altitude_m: this.pos[1], vz: this.v[1], ground_speed: Math.hypot(this.v[0], this.v[2]),
     x: this.pos[0], z: this.pos[2], battery: this.batt, armed: this.armed, on_ground: this.onGround,
+    voltage: volts, cell_voltage: volts/B.cells, current_a: this.amps,
+    minutes_left: this.armed && this.drainAvg > 1e-6 ? this.batt/this.drainAvg/60 : null, // at the present draw
+    battery_state: this.batt < c.crit ? 'critical' : (this.batt < c.low ? 'low' : (this.batt < c.warn ? 'warning' : 'ok')),
+    rth_needed_pct: this.onGround ? 0 : this.needPct, // battery needed to get home, refreshed in flight
+    auto: this.auto, auto_reason: this.auto ? this.autoReason : null, rth_phase: this.rth ? this.rth.phase : null,
     motors: this.F.map(function(x){ return x/(PARAMS.m*PARAMS.g*PARAMS.twr/4); })
   };
 };
@@ -869,6 +1057,7 @@ function drillStep(dt){
   }
 }
 sim.onEvent = function(ev){
+  failsafeEvent(ev);
   if (ev === 'crash'){
     if (drill.id !== 'free' && drill.phase !== 'done') drill.phase = 'failed';
     showNotice('fail', 'Crashed', sim.crashed + ' Press R to reset.');
@@ -895,6 +1084,7 @@ window.addEventListener('keydown', function(e){
   if (e.code === 'Space') sim.command(sim.armed ? 'disarm' : 'arm');
   if (e.code === 'KeyT') sim.command('takeoff');
   if (e.code === 'KeyL') sim.command('land');
+  if (e.code === 'KeyH') toggleRth();
   if (e.code === 'KeyR') startDrill(drill.id);
   if (e.code === 'KeyP') togglePlan();
   if (e.code === 'KeyC') setCam(CAMS[(CAMS.indexOf(cam) + 1) % 3]);
@@ -918,6 +1108,7 @@ function readInputs(dt){
       gp[ch] = (ch === 'thr' && !sim.thrCentered) ? raw : expo(dead(raw));
     });
   }
+  if (pad) padActionsTick({ buttons: [].map.call(pad.buttons, function(b){ return b.pressed || b.value > 0.5; }), axes: [].slice.call(pad.axes) }); else { actState = null; assigning = null; }
   updatePadUI(pad);
   ['thr', 'yaw', 'pitch', 'roll'].forEach(function(ch){ sticks[ch] = clamp(kb[ch] + gp[ch] + expo(touch[ch]), -1, 1); });
 }
@@ -951,15 +1142,135 @@ function buildPadUI(pad){
     padBars[ch] = tr.querySelector('i'); t.appendChild(tr);
   });
   $('padStatus').textContent = 'Connected: ' + pad.id.slice(0, 60) + '. Move each stick and check that the bar follows. Up and right should fill the bar.';
-  padBuilt = true;
+  buildActionsUI(); padBuilt = true;
 }
 function updatePadUI(pad){
-  if (!pad){ if (padBuilt){ padBuilt = false; $('padMap').innerHTML = ''; $('padStatus').textContent = 'Controller disconnected.'; } return; }
+  if (!pad){ if (padBuilt){ padBuilt = false; $('padMap').innerHTML = ''; $('padActions').innerHTML = ''; $('assignMsg').textContent = ''; actRows = {}; $('padStatus').textContent = 'Controller disconnected.'; } return; }
   if (!padBuilt) buildPadUI(pad);
   if (!$('padBox').open) return;
   Object.keys(padBars).forEach(function(ch){ var raw = pad.axes[padMap[ch][0]] || 0; if (padMap[ch][1]) raw = -raw; padBars[ch].style.width = ((raw + 1)*50).toFixed(0) + '%'; });
+  updateActionsUI();
+}
+// switches and buttons assigned to actions. The decisions are made by actionStep in 41-actions.js.
+if (!padMap.actions) padMap.actions = {};
+var actState = null, assigning = null, actRows = {};
+function stickAxes(){ return ['thr', 'yaw', 'pitch', 'roll'].map(function(ch){ return padMap[ch][0]; }); }
+function savePad(){ store.set('uavtrainer.pad.v1', padMap); }
+function runAction(c){
+  if (c === 'cam') setCam(CAMS[(CAMS.indexOf(cam) + 1) % 3]);
+  else if (c.indexOf('mode:') === 0) setMode(c.slice(5));
+  else sim.command(c);
+}
+function padActionsTick(inp){
+  if (assigning){ // nothing fires while an input is being picked
+    if (!assigning.base) assigning.base = inp;
+    var src = detectSource(assigning.base, inp, stickAxes(), { button: assigning.def.button });
+    if (src){ padMap.actions[assigning.def.id] = src; savePad(); $('assignMsg').textContent = assigning.def.name + ' is now on ' + srcName(src) + '.'; assigning = null; actState = null; buildActionsUI(); }
+    return;
+  }
+  var r = actionStep(padMap.actions, actState, inp, { armed: sim.armed, rthActive: sim.auto === 'rth' }); actState = r.state;
+  r.cmds.forEach(runAction);
+}
+function srcName(src){ return src.kind === 'button' ? 'button ' + src.index : 'axis ' + src.index + (src.dir < 0 ? ' (reversed)' : ''); }
+function buildActionsUI(){
+  var t = $('padActions'); actRows = {};
+  t.innerHTML = '<tr><th>Action</th><th>Input</th><th>Type</th><th>Live</th><th></th></tr>';
+  ACTIONS.forEach(function(def){
+    var src = padMap.actions[def.id], tr = document.createElement('tr'), busy = assigning && assigning.def === def;
+    var type = !src ? '' : (def.id === 'mode3' ? '3-position' : '<select aria-label="Input type for ' + def.name + '"><option value="1"' + (src.latch ? ' selected' : '') + '>Switch</option><option value="0"' + (src.latch ? '' : ' selected') + '>Button</option></select>');
+    tr.innerHTML = '<td>' + def.name + '</td><td>' + (busy ? 'waiting...' : (src ? srcName(src) : 'not set')) + '</td><td>' + type + '</td><td>' + (src ? '<span class="lamp">OFF</span>' : '') + '</td><td><button data-a="assign">' + (busy ? 'Cancel' : 'Assign') + '</button>' + (src ? ' <button data-a="clear">Clear</button>' : '') + '</td>';
+    tr.querySelector('[data-a="assign"]').addEventListener('click', function(){
+      assigning = busy ? null : { def: def, base: null };
+      $('assignMsg').textContent = assigning ? 'Now flip the switch or press the button for "' + def.name + '".' + (def.button === false ? ' This one needs a 3-position switch.' : '') : '';
+      buildActionsUI();
+    });
+    if (src){
+      tr.querySelector('[data-a="clear"]').addEventListener('click', function(){ delete padMap.actions[def.id]; savePad(); actState = null; $('assignMsg').textContent = def.name + ' cleared.'; buildActionsUI(); });
+      var sel = tr.querySelector('select'); if (sel) sel.addEventListener('change', function(e){ src.latch = e.target.value === '1'; savePad(); });
+      actRows[def.id] = tr.querySelector('.lamp');
+    }
+    t.appendChild(tr);
+  });
+}
+var MODE3_LAMP = { pos: 'POS', alt: 'ALT', angle: 'STAB' };
+function updateActionsUI(){
+  Object.keys(actRows).forEach(function(id){
+    var lamp = actRows[id], on = actState ? (id === 'mode3' ? true : !!actState.on[id]) : false;
+    lamp.textContent = id === 'mode3' ? (actState && actState.mode3 ? MODE3_LAMP[actState.mode3] : '...') : (on ? 'ON' : 'OFF'); lamp.className = 'lamp' + (on ? ' on' : '');
+  });
 }
 $('thrCentered').addEventListener('change', function(e){ sim.thrCentered = e.target.checked; });
+
+/*ACTIONS-BEGIN*/
+// ---------- controller actions: switches and buttons assigned to commands ----------
+// Pure logic, no DOM and no gamepad API, so test/run.js loads this whole file headless.
+// A source is { kind: 'button' | 'axis', index, dir, latch }. dir (+1 or -1) is the side of an axis that means "on".
+// latch is true for a switch that stays where you put it and false for a momentary button.
+var ACTION_PARAMS = {
+  axisOn: 0.5, axisOff: 0.3,     // an axis source turns on above axisOn and off below axisOff (hysteresis)
+  detectMove: 0.5,               // Assign picks an axis once it has moved this far from where it was
+  modeBand: 1/3,                 // three-position source: below -modeBand, between, above +modeBand
+  modeHyst: 0.05                 // extra travel needed to leave the current position
+};
+var ACTIONS = [
+  { id: 'rth', name: 'Return to home' },
+  { id: 'arm', name: 'Arm or disarm' },
+  { id: 'land', name: 'Land' },
+  { id: 'cam', name: 'Change camera' },
+  { id: 'mode3', name: 'Flight mode (3-position switch)', button: false },
+  { id: 'modePos', name: 'Mode: Position hold' },
+  { id: 'modeAlt', name: 'Mode: Altitude hold' },
+  { id: 'modeAngle', name: 'Mode: Stabilized' }
+];
+var MODE_BUTTONS = { modePos: 'pos', modeAlt: 'alt', modeAngle: 'angle' };
+function srcValue(src, inp){
+  if (src.kind === 'button') return inp.buttons[src.index] ? 1 : 0;
+  return (inp.axes[src.index] || 0)*(src.dir < 0 ? -1 : 1);
+}
+function srcOn(src, inp, was){
+  if (src.kind === 'button') return !!inp.buttons[src.index];
+  var v = srcValue(src, inp); return was ? v > ACTION_PARAMS.axisOff : v > ACTION_PARAMS.axisOn;
+}
+function mode3Pos(src, inp, was){
+  var v = srcValue(src, inp), b = ACTION_PARAMS.modeBand, h = ACTION_PARAMS.modeHyst;
+  if (was === 'pos' && v < -b + h) return 'pos';
+  if (was === 'angle' && v > b - h) return 'angle';
+  if (was === 'alt' && Math.abs(v) < b + h) return 'alt';
+  return v < -b ? 'pos' : (v > b ? 'angle' : 'alt');
+}
+// The Assign flow: the first button pressed, or the first axis moved, since the snapshot `base` was taken.
+// Axes already used by the sticks are skipped. allow = { button, axis } limits what an action accepts.
+function detectSource(base, inp, stickAxes, allow){
+  var i;
+  if (!allow || allow.button !== false) for (i = 0; i < inp.buttons.length; i++) if (inp.buttons[i] && !base.buttons[i]) return { kind: 'button', index: i, dir: 1, latch: false };
+  if (!allow || allow.axis !== false) for (i = 0; i < inp.axes.length; i++){
+    if (stickAxes.indexOf(i) >= 0) continue;
+    var v = inp.axes[i] || 0; if (Math.abs(v - (base.axes[i] || 0)) > ACTION_PARAMS.detectMove) return { kind: 'axis', index: i, dir: v < (base.axes[i] || 0) ? -1 : 1, latch: true };
+  }
+  return null;
+}
+// One decision step. assign = { actionId: source }, prev = the state returned last time (null on the first call),
+// inp = { buttons: [bool], axes: [number] }, ctx = { armed, rthActive }.
+// Returns { state, cmds }. Commands fire on edges only: the first sight of a source records it without firing,
+// so a switch left on does not act at start, and does not restart RTH after the pilot cancels with the stick.
+function actionStep(assign, prev, inp, ctx){
+  var state = { on: {}, mode3: null }, cmds = [];
+  Object.keys(assign).forEach(function(id){
+    var src = assign[id]; if (!src) return;
+    if (id === 'mode3'){
+      var was3 = prev ? prev.mode3 : null, pos = mode3Pos(src, inp, was3); state.mode3 = pos;
+      if (was3 !== null && pos !== was3) cmds.push('mode:' + pos);
+      return;
+    }
+    var seen = prev && prev.on[id] !== undefined, was = seen ? prev.on[id] : false, on = srcOn(src, inp, was); state.on[id] = on;
+    if (!seen || on === was) return;
+    if (id === 'rth'){ if (src.latch) cmds.push(on ? 'rth' : 'cancel_rth'); else if (on) cmds.push(ctx.rthActive ? 'cancel_rth' : 'rth'); }
+    else if (id === 'arm'){ if (src.latch) cmds.push(on ? 'arm' : 'disarm'); else if (on) cmds.push(ctx.armed ? 'disarm' : 'arm'); }
+    else if (on){ if (id === 'land') cmds.push('land'); else if (id === 'cam') cmds.push('cam'); else if (MODE_BUTTONS[id]) cmds.push('mode:' + MODE_BUTTONS[id]); }
+  });
+  return { state: state, cmds: cmds };
+}
+/*ACTIONS-END*/
 
 // ---------- UI ----------
 var HINTS = {
@@ -1028,10 +1339,10 @@ function updateUI(dt){
   $('tHdg').textContent = ('00' + Math.round(tel.heading_deg) % 360).slice(-3) + ' deg';
   $('tDist').textContent = Math.hypot(tel.x, tel.altitude_m - 1.6, tel.z - 7).toFixed(1) + ' m';
   updateSensorUI();
-  $('tBat').textContent = Math.round(tel.battery) + ' %'; $('tBat').style.color = tel.battery < 20 ? 'var(--warn)' : '';
+  updateBatteryUI(tel);
   for (var i = 0; i < 4; i++) $('m' + i).style.width = (tel.motors[i]*100).toFixed(0) + '%';
   var ap = $('armPill');
-  ap.textContent = sim.crashed ? 'Crashed' : (sim.auto === 'takeoff' ? 'Taking off' : sim.auto === 'land' ? 'Landing' : sim.armed ? 'Armed' : 'Disarmed');
+  ap.textContent = sim.crashed ? 'Crashed' : (sim.auto === 'takeoff' ? 'Taking off' : sim.auto === 'land' ? 'Landing' : sim.auto === 'rth' ? 'Returning home' : sim.auto === 'critland' ? 'Emergency landing' : sim.armed ? 'Armed' : 'Disarmed');
   ap.className = 'pill' + (sim.armed ? ' armed' : '');
   $('bArm').textContent = sim.armed ? 'Disarm' : 'Arm';
   $('bTakeoff').disabled = !sim.onGround || !!sim.crashed; $('bLand').disabled = sim.onGround;
@@ -1045,11 +1356,92 @@ function updateUI(dt){
   if (sim.avoiding) msg = '<b>Obstacle avoidance is holding you back.</b> ' + near.toFixed(1) + ' m to the nearest surface.' + (sens.downObs && sens.down < 2 ? ' There is an obstacle below: move clear before descending.' : '');
   else if (sim.assisting) msg = '<b>Landing assist is slowing your descent.</b>';
   else if (near < 2 && !sim.onGround) msg = '<b>Obstacle ' + near.toFixed(1) + ' m away.</b> ' + (sim.mode === 'pos' ? '' : 'Avoidance only acts in position hold. ') + 'Ease off.';
-  if (sim.auto === 'mission' && sim.mission) msg = '<b>Flying the plan.</b> Waypoint ' + (sim.mission.idx + 1) + ' of ' + sim.mission.wps.length + ', ' + sim.photos.length + ' photos taken.' + (sim.mission.rth ? ' <b>Low battery: returning home.</b>' : '');
+  if (sim.auto === 'mission' && sim.mission) msg = '<b>Flying the plan.</b> Waypoint ' + (sim.mission.idx + 1) + ' of ' + sim.mission.wps.length + ', ' + sim.photos.length + ' photos taken.';
   else if (sim.auto === 'land' && sim.photos.length) msg = '<b>Plan complete.</b> ' + sim.photos.length + ' photos taken. Landing at home.';
   if (Math.hypot(tel.x, tel.z) > (fieldMode || sim.auto ? 500 : 45)) msg = '<b>Too far away.</b> You would lose sight of it. Bring it back or press R.';
+  msg = failsafeTask(tel, msg);
   $('task').innerHTML = msg;
 }
+
+// ---------- return to home and battery: settings, battery bar, messages, beep ----------
+// All decisions are made in 00-sim.js. This fragment only shows them and passes the settings in.
+var FAILSAFE_UI = {
+  flashSeconds: 8,               // how long a one-off battery message stays in the task box
+  beep: { hz: 880, ms: 140, gapMs: 110, gain: 0.08 } // warning beeps once, low twice, critical three times
+};
+var fsCfg = store.get('uavtrainer.failsafe.v1', { rthAlt: PARAMS.rth.alt, warn: PARAMS.batt.warn, low: PARAMS.batt.low, crit: PARAMS.batt.crit, autoRth: true, beep: false });
+var fsFlash = { html: '', until: 0 }, fsLastReason = null, audioCtx = null;
+function fsNow(){ return performance.now()/1000; }
+function flashTask(html){ fsFlash = { html: html, until: fsNow() + FAILSAFE_UI.flashSeconds }; }
+function applyFailsafeCfg(){
+  sim.rthAlt = fsCfg.rthAlt; sim.battCfg = { warn: fsCfg.warn, low: fsCfg.low, crit: fsCfg.crit, autoRth: fsCfg.autoRth };
+  store.set('uavtrainer.failsafe.v1', fsCfg);
+}
+function readFailsafeInputs(){
+  var R = PARAMS.rth, alt = parseFloat($('rthAlt').value), w = parseFloat($('bWarn').value), l = parseFloat($('bLow').value), c = parseFloat($('bCrit').value), msg = $('battMsg');
+  var err = battCfgError(w, l, c);
+  if (!err && (isNaN(alt) || alt < R.altMin || alt > R.altMax)) err = 'RTH altitude must be between ' + R.altMin + ' and ' + R.altMax + ' m.';
+  if (err){ msg.textContent = err + ' Still using ' + fsCfg.warn + ', ' + fsCfg.low + ', ' + fsCfg.crit + ' % and ' + fsCfg.rthAlt + ' m.'; msg.className = 'note warn'; return; }
+  msg.textContent = ''; msg.className = 'note';
+  fsCfg.rthAlt = alt; fsCfg.warn = w; fsCfg.low = l; fsCfg.crit = c; applyFailsafeCfg(); if (!$('plan').hidden) computePlan();
+}
+function beep(n){
+  if (!fsCfg.beep || !audioCtx) return;
+  var B = FAILSAFE_UI.beep;
+  for (var i = 0; i < n; i++){
+    var t0 = audioCtx.currentTime + i*(B.ms + B.gapMs)/1000, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = B.hz; g.gain.value = B.gain; o.connect(g); g.connect(audioCtx.destination); o.start(t0); o.stop(t0 + B.ms/1000);
+  }
+}
+function toggleRth(){ sim.command(sim.auto === 'rth' ? 'cancel_rth' : 'rth'); }
+// Called from sim.onEvent (30-drills.js).
+function failsafeEvent(ev){
+  var tel = sim.telemetry(), b = Math.round(tel.battery);
+  if (ev === 'batt_warn'){ beep(1); flashTask('<b>Battery warning: ' + b + ' %.</b> Plan your return.'); }
+  else if (ev === 'batt_margin'){ var need = tel.rth_needed_pct; flashTask('<b>Battery is getting short for the trip home.</b> ' + (isFinite(need) ? 'The return needs about ' + Math.ceil(need) + ' % and you have ' + b + ' %.' : 'The wind is too strong to fly home against at this height.') + ' Head back now.'); }
+  else if (ev === 'batt_low'){ beep(2); if (!fsCfg.autoRth) flashTask('<b>Low battery: ' + b + ' %.</b> Automatic RTH is off. Fly home and land.'); }
+  else if (ev === 'batt_crit') beep(3);
+  else if (ev === 'rth_cancel') flashTask('<b>Return to home cancelled.</b> You have control in ' + MODENAMES[sim.mode].toLowerCase() + ' mode.' + (fsLastReason === 'battery' ? ' The battery is still low: land soon.' : ''));
+}
+// The task box text while a failsafe is active, or a recent one-off message. Returns msg unchanged otherwise.
+function failsafeTask(tel, msg){
+  fsLastReason = tel.auto_reason || (tel.auto ? null : fsLastReason);
+  if (tel.auto === 'rth'){
+    var d = Math.hypot(tel.x, tel.z), ph = tel.rth_phase;
+    return '<b>' + (tel.auto_reason === 'battery' ? 'Low battery: returning home.' : 'Returning home.') + '</b> ' +
+      (ph === 'climb' ? 'Climbing to ' + Math.round(sim.rthAlt) + ' m.' : ph === 'cruise' ? Math.round(d) + ' m to go at ' + Math.round(tel.altitude_m) + ' m.' : 'Descending over home.') +
+      ' It does not steer around obstacles. Move the right stick or press H to cancel.';
+  }
+  if (tel.auto === 'critland'){
+    var need = tel.rth_needed_pct, why = tel.auto_reason === 'unreachable'
+      ? '<b>Low battery, and home is out of reach.</b> ' + (isFinite(need) ? 'The return needs about ' + Math.ceil(need) + ' % and you have ' + Math.round(tel.battery) + ' %.' : 'The wind is too strong to fly home against.') + ' Landing here instead.'
+      : '<b>Critical battery: emergency landing.</b>';
+    return why + ' This cannot be cancelled. Use the right stick to pick a clear spot.';
+  }
+  return fsNow() < fsFlash.until ? fsFlash.html : msg;
+}
+var BATT_LABEL = { ok: 'OK', warning: 'WARNING', low: 'LOW', critical: 'CRITICAL' };
+function updateBatteryUI(tel){
+  var state = tel.battery_state, box = $('battBox');
+  $('battPct').textContent = Math.round(tel.battery) + ' %'; $('battCell').textContent = tel.cell_voltage.toFixed(2) + ' V/cell'; $('battState').textContent = BATT_LABEL[state];
+  $('battFill').style.width = tel.battery.toFixed(0) + '%'; box.className = state === 'ok' ? 'ok' : (state === 'critical' ? 'critical' : 'warning');
+  $('tBat').textContent = Math.round(tel.battery) + ' %'; $('tBat').style.color = state === 'ok' ? '' : 'var(--warn)'; $('tBatState').textContent = BATT_LABEL[state];
+  $('tVolt').textContent = tel.voltage.toFixed(1) + ' V'; $('tCell').textContent = tel.cell_voltage.toFixed(2) + ' V'; $('tAmp').textContent = tel.current_a.toFixed(0) + ' A';
+  $('tMin').textContent = tel.minutes_left === null ? 'n/a' : (tel.minutes_left > 99 ? 'over 99 min' : tel.minutes_left.toFixed(1) + ' min');
+  var b = $('bRth'); b.textContent = tel.auto === 'rth' ? 'Cancel RTH' : 'Return to home'; b.disabled = tel.on_ground || tel.auto === 'critland' || !!sim.crashed;
+}
+if (battCfgError(fsCfg.warn, fsCfg.low, fsCfg.crit) || !(fsCfg.rthAlt >= PARAMS.rth.altMin && fsCfg.rthAlt <= PARAMS.rth.altMax)) fsCfg = { rthAlt: PARAMS.rth.alt, warn: PARAMS.batt.warn, low: PARAMS.batt.low, crit: PARAMS.batt.crit, autoRth: fsCfg.autoRth !== false, beep: !!fsCfg.beep };
+$('rthAlt').value = fsCfg.rthAlt; $('bWarn').value = fsCfg.warn; $('bLow').value = fsCfg.low; $('bCrit').value = fsCfg.crit; $('autoRth').checked = fsCfg.autoRth; $('battBeep').checked = false; fsCfg.beep = false;
+applyFailsafeCfg();
+['rthAlt', 'bWarn', 'bLow', 'bCrit'].forEach(function(id){ $(id).addEventListener('change', readFailsafeInputs); });
+$('autoRth').addEventListener('change', function(e){ fsCfg.autoRth = e.target.checked; applyFailsafeCfg(); });
+// The beep always starts off: a browser only lets a page make sound after a click, and this click is it.
+$('battBeep').addEventListener('change', function(e){
+  fsCfg.beep = e.target.checked; store.set('uavtrainer.failsafe.v1', fsCfg);
+  if (fsCfg.beep && !audioCtx){ var AC = window.AudioContext || window.webkitAudioContext; if (AC) audioCtx = new AC(); }
+  if (fsCfg.beep) beep(1);
+});
+$('bRth').addEventListener('click', function(e){ toggleRth(); e.target.blur(); });
 
 // ---------- environment: sun, cloud, wind ----------
 var env = { el: 50, cloud: 0.1 }, sunDir = new THREE.Vector3();
@@ -1281,7 +1673,8 @@ function renderPlanOut(){
   if (P.mode === 'area' && poly.length < 3) w.push('Mark at least three corners on the map.');
   if (P.mode === 'route' && !route.length) w.push('Click the map to drop waypoints in the order to fly them.');
   if (P.mode === 'area' && P.interval < 2) w.push('Photo interval under 2 s. Many cameras cannot keep up: slow down or fly higher.');
-  if (P.time/60 > P.endurance*0.8) w.push('Needs more than 80 % of the battery. Split the job or change altitude.');
+  var usable = 100 - sim.battCfg.low; // the low battery level sends the drone home, so only the share above it is available to the plan
+  if (P.time/60 > P.endurance*usable/100) w.push('Needs more than ' + usable + ' % of the battery, and the low battery level (' + sim.battCfg.low + ' %) would send it home first. Split the job or change altitude.');
   var top = P.alt; route.forEach(function(r){ if (P.mode === 'route') top = Math.max(top, r.alt); }); if (top*3.281 > 400) w.push('Above the 400 ft AGL ceiling.');
   var far = 0; P.wps.forEach(function(q){ far = Math.max(far, Math.hypot(q.x, q.z)); }); if (far > 450) w.push('Farthest point is ' + Math.round(far) + ' m from you. Holding visual line of sight is doubtful.');
   $('planWarn').textContent = w.join(' '); $('planFly').disabled = !P.ok;
@@ -1411,7 +1804,7 @@ function setPlanMode(m){ planMode = m; [].forEach.call($('planModes').children, 
 function togglePlan(){ var el = $('plan'); el.hidden = !el.hidden; if (!el.hidden) computePlan(); }
 $('bPlan').addEventListener('click', function(e){ togglePlan(); e.target.blur(); });
 $('planClose').addEventListener('click', togglePlan);
-$('simSpeed').addEventListener('change', function(e){ timeScale = +e.target.value; });
+$('simSpeed').addEventListener('change', function(e){ timeScale = +e.target.value; e.target.blur(); }); // blur so the P key works again at once
 $('planFly').addEventListener('click', function(){
   if (!plan || !plan.ok) return;
   if (sim.crashed) startDrill('free');
@@ -1420,7 +1813,7 @@ $('planFly').addEventListener('click', function(){
 });
 $('planStop').addEventListener('click', function(){ sim.stopMission(); });
 function planTick(dt){ mapT += dt; if (mapT > 0.2){ mapT = 0;
-  if (sim.auto === 'mission'){ var l = track[track.length - 1]; if (!l || Math.hypot(l[0] - sim.pos[0], l[1] - sim.pos[2]) > 1) track.push([sim.pos[0], sim.pos[2]]); }
+  if (sim.auto === 'mission' || sim.auto === 'rth'){ var l = track[track.length - 1]; if (!l || Math.hypot(l[0] - sim.pos[0], l[1] - sim.pos[2]) > 1) track.push([sim.pos[0], sim.pos[2]]); }
   drawMap(); } }
 
 // --- scale from two points (for screenshots with no georeference) ---

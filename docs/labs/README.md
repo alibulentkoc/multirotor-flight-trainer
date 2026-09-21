@@ -1,6 +1,6 @@
 # Labs
 
-Thirty short labs in three levels. Every lab is its own page and repeats its own start steps, so you can do them in any order. Within a level, the order shown is the easiest path.
+Thirty-two short labs: three levels, and an extra group on failsafes. Every lab is its own page and repeats its own start steps, so you can do them in any order. Within a level, the order shown is the easiest path.
 
 Trainer address: https://alibulentkoc.github.io/multirotor-flight-trainer/
 
@@ -59,4 +59,13 @@ You fly by hand in wind and design complete missions. Expect many tries. Every s
 | [ ] | [Lab 29. Design a mission to a brief](lab-29-design-a-mission-to-a-brief.md) | |
 | [ ] | [Lab 30. Checkride](lab-30-checkride.md) | |
 
-A single-page version of all 30 labs, for printing, is in [../LABS.md](../LABS.md).
+## Extra. Failsafes (15 to 25 minutes each)
+
+What the drone does by itself when something runs out: return to home, the battery levels, and the emergency landing. Do these after Lab 8.
+
+| Done | Lab | Best score |
+|---|---|---|
+| [ ] | [Lab 31. Return to home, and why its altitude matters](lab-31-return-to-home-and-why-its-altitude-matters.md) | |
+| [ ] | [Lab 32. Battery warnings and the emergency landing](lab-32-battery-warnings-and-the-emergency-landing.md) | |
+
+A single-page version of all 32 labs, for printing, is in [../LABS.md](../LABS.md).

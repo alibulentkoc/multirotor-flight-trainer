@@ -14,6 +14,7 @@ window.addEventListener('keydown', function(e){
   if (e.code === 'Space') sim.command(sim.armed ? 'disarm' : 'arm');
   if (e.code === 'KeyT') sim.command('takeoff');
   if (e.code === 'KeyL') sim.command('land');
+  if (e.code === 'KeyH') toggleRth();
   if (e.code === 'KeyR') startDrill(drill.id);
   if (e.code === 'KeyP') togglePlan();
   if (e.code === 'KeyC') setCam(CAMS[(CAMS.indexOf(cam) + 1) % 3]);
@@ -37,6 +38,7 @@ function readInputs(dt){
       gp[ch] = (ch === 'thr' && !sim.thrCentered) ? raw : expo(dead(raw));
     });
   }
+  if (pad) padActionsTick({ buttons: [].map.call(pad.buttons, function(b){ return b.pressed || b.value > 0.5; }), axes: [].slice.call(pad.axes) }); else { actState = null; assigning = null; }
   updatePadUI(pad);
   ['thr', 'yaw', 'pitch', 'roll'].forEach(function(ch){ sticks[ch] = clamp(kb[ch] + gp[ch] + expo(touch[ch]), -1, 1); });
 }
@@ -70,13 +72,62 @@ function buildPadUI(pad){
     padBars[ch] = tr.querySelector('i'); t.appendChild(tr);
   });
   $('padStatus').textContent = 'Connected: ' + pad.id.slice(0, 60) + '. Move each stick and check that the bar follows. Up and right should fill the bar.';
-  padBuilt = true;
+  buildActionsUI(); padBuilt = true;
 }
 function updatePadUI(pad){
-  if (!pad){ if (padBuilt){ padBuilt = false; $('padMap').innerHTML = ''; $('padStatus').textContent = 'Controller disconnected.'; } return; }
+  if (!pad){ if (padBuilt){ padBuilt = false; $('padMap').innerHTML = ''; $('padActions').innerHTML = ''; $('assignMsg').textContent = ''; actRows = {}; $('padStatus').textContent = 'Controller disconnected.'; } return; }
   if (!padBuilt) buildPadUI(pad);
   if (!$('padBox').open) return;
   Object.keys(padBars).forEach(function(ch){ var raw = pad.axes[padMap[ch][0]] || 0; if (padMap[ch][1]) raw = -raw; padBars[ch].style.width = ((raw + 1)*50).toFixed(0) + '%'; });
+  updateActionsUI();
+}
+// switches and buttons assigned to actions. The decisions are made by actionStep in 41-actions.js.
+if (!padMap.actions) padMap.actions = {};
+var actState = null, assigning = null, actRows = {};
+function stickAxes(){ return ['thr', 'yaw', 'pitch', 'roll'].map(function(ch){ return padMap[ch][0]; }); }
+function savePad(){ store.set('uavtrainer.pad.v1', padMap); }
+function runAction(c){
+  if (c === 'cam') setCam(CAMS[(CAMS.indexOf(cam) + 1) % 3]);
+  else if (c.indexOf('mode:') === 0) setMode(c.slice(5));
+  else sim.command(c);
+}
+function padActionsTick(inp){
+  if (assigning){ // nothing fires while an input is being picked
+    if (!assigning.base) assigning.base = inp;
+    var src = detectSource(assigning.base, inp, stickAxes(), { button: assigning.def.button });
+    if (src){ padMap.actions[assigning.def.id] = src; savePad(); $('assignMsg').textContent = assigning.def.name + ' is now on ' + srcName(src) + '.'; assigning = null; actState = null; buildActionsUI(); }
+    return;
+  }
+  var r = actionStep(padMap.actions, actState, inp, { armed: sim.armed, rthActive: sim.auto === 'rth' }); actState = r.state;
+  r.cmds.forEach(runAction);
+}
+function srcName(src){ return src.kind === 'button' ? 'button ' + src.index : 'axis ' + src.index + (src.dir < 0 ? ' (reversed)' : ''); }
+function buildActionsUI(){
+  var t = $('padActions'); actRows = {};
+  t.innerHTML = '<tr><th>Action</th><th>Input</th><th>Type</th><th>Live</th><th></th></tr>';
+  ACTIONS.forEach(function(def){
+    var src = padMap.actions[def.id], tr = document.createElement('tr'), busy = assigning && assigning.def === def;
+    var type = !src ? '' : (def.id === 'mode3' ? '3-position' : '<select aria-label="Input type for ' + def.name + '"><option value="1"' + (src.latch ? ' selected' : '') + '>Switch</option><option value="0"' + (src.latch ? '' : ' selected') + '>Button</option></select>');
+    tr.innerHTML = '<td>' + def.name + '</td><td>' + (busy ? 'waiting...' : (src ? srcName(src) : 'not set')) + '</td><td>' + type + '</td><td>' + (src ? '<span class="lamp">OFF</span>' : '') + '</td><td><button data-a="assign">' + (busy ? 'Cancel' : 'Assign') + '</button>' + (src ? ' <button data-a="clear">Clear</button>' : '') + '</td>';
+    tr.querySelector('[data-a="assign"]').addEventListener('click', function(){
+      assigning = busy ? null : { def: def, base: null };
+      $('assignMsg').textContent = assigning ? 'Now flip the switch or press the button for "' + def.name + '".' + (def.button === false ? ' This one needs a 3-position switch.' : '') : '';
+      buildActionsUI();
+    });
+    if (src){
+      tr.querySelector('[data-a="clear"]').addEventListener('click', function(){ delete padMap.actions[def.id]; savePad(); actState = null; $('assignMsg').textContent = def.name + ' cleared.'; buildActionsUI(); });
+      var sel = tr.querySelector('select'); if (sel) sel.addEventListener('change', function(e){ src.latch = e.target.value === '1'; savePad(); });
+      actRows[def.id] = tr.querySelector('.lamp');
+    }
+    t.appendChild(tr);
+  });
+}
+var MODE3_LAMP = { pos: 'POS', alt: 'ALT', angle: 'STAB' };
+function updateActionsUI(){
+  Object.keys(actRows).forEach(function(id){
+    var lamp = actRows[id], on = actState ? (id === 'mode3' ? true : !!actState.on[id]) : false;
+    lamp.textContent = id === 'mode3' ? (actState && actState.mode3 ? MODE3_LAMP[actState.mode3] : '...') : (on ? 'ON' : 'OFF'); lamp.className = 'lamp' + (on ? ' on' : '');
+  });
 }
 $('thrCentered').addEventListener('change', function(e){ sim.thrCentered = e.target.checked; });
 

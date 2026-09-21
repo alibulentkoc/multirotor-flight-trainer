@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lab 30. Checkride</title>
+<title>Lab 32. Battery warnings and the emergency landing</title>
 <link rel="preload" href="fonts/LM-regular.woff2" as="font" type="font/woff2" crossorigin>
 <style>@font-face{font-family:"Latin Modern";font-style:normal;font-weight:400;font-display:swap;src:url("fonts/LM-regular.woff2") format("woff2")}
 @font-face{font-family:"Latin Modern";font-style:italic;font-weight:400;font-display:swap;src:url("fonts/LM-italic.woff2") format("woff2")}
@@ -55,39 +55,57 @@ input.score{width:3.6rem;font:inherit;padding:1px 6px;border:0;border-bottom:1px
 <body>
 <div class="top"><a class="brand" href="index.html">Multirotor Flight Trainer: Labs</a><span class="nav"><a href="../learn/index.html">Fundamentals</a><a class="btn" href="../../index.html" target="_blank" rel="noopener">Open the trainer</a></span></div>
 <main>
-<h1>Lab 30. Checkride</h1>
-<div class="level">Level 3: On your own</div>
+<h1>Lab 32. Battery warnings and the emergency landing</h1>
+<div class="level">Extra: Failsafes</div>
 <div class="calm"><ul><li>You cannot break anything. This is a simulator. Crashing costs nothing.</li><li>If anything goes wrong, press <strong>R</strong>. The drone returns to the start, good as new.</li><li>There is no time limit. Only your best try counts.</li></ul></div>
 <details class="keys"><summary>Show the keys</summary><pre>W / S   up / down            Arrow Up / Down     forward / back
 A / D   turn left / right    Arrow Left / Right  slide left / right
 T  take off    L  land    R  start over    C  change view    P  flight plan
 1  Position hold    2  Altitude hold    3  Stabilized
 Space  motors on / off       Shift  full stick
+H  return to home, press again to cancel
 </pre><p>Orange arms mark the front of the drone. Pressing <strong>1</strong> at any time gives you all the help back.</p></details>
 <hr>
-<p><strong>Goal:</strong> fly a complete manual flight, from take off to landing, with no help and no reset.</p>
+<p><strong>Goal:</strong> watch the battery pass all three levels, then steer an emergency landing to a clear spot.</p>
 <p><strong>Start</strong></p>
 <ol>
 <li>Click <strong>Open the trainer</strong> at the top of this page.</li>
 <li>Click once on the picture of the field.</li>
-<li>In the Sensors section, <strong>untick "Landing assist"</strong> and <strong>untick "Obstacle avoidance"</strong>.</li>
-<li>In "Conditions and view", set <strong>Wind at 10 m</strong> to 3 m/s.</li>
-<li>Check that the view at the top reads "View: pilot".</li>
-<li>Press <strong>3</strong> for Stabilized.</li>
+<li>Press <strong>1</strong> for Position hold.</li>
+<li>In the side panel, find "Battery and return to home". The levels read 30, 20, and 10. "Automatic RTH on low battery" is ticked.</li>
+<li>Find the battery bar at the top left of the picture. It reads "100 %", "4.20 V/cell", and "OK".</li>
 </ol>
-<p><strong>Do, in one flight</strong></p>
+<p><strong>Do, part 1: voltage</strong></p>
 <ol>
-<li>Press <strong>Space</strong> to start the motors. Hold <strong>W</strong> to lift off. Climb to about 3 m and hold a steady hover for ten seconds.</li>
-<li>Fly nose-first to the tree and go once around it.</li>
-<li>Descend to about 1.5 m. Fly through the gate and back.</li>
-<li>Turn the nose toward you. Fly back to the orange ring, nose-in.</li>
-<li>Hover over the ring for five seconds.</li>
-<li>Land by hand on the ring, at less than 1 m/s. Press <strong>Space</strong> to switch the motors off.</li>
+<li>Press <strong>T</strong>. Look at "Per cell" in the section "Battery and return to home". It is already below 4.20 V, because the motors are drawing current.</li>
+<li>Hold <strong>W</strong> with <strong>Shift</strong> for three seconds. "Current" jumps and "Per cell" dips. Let go. The voltage comes back. This dip is called sag.</li>
+<li>Climb to about 10 m. Read "Time left". Hold <strong>W</strong> again and watch it drop, then recover in the hover.</li>
 </ol>
-<p><strong>You pass when</strong> you complete all six steps in one flight without a crash and without pressing <strong>1</strong> or <strong>R</strong>.</p>
-<p><strong>This is hard.</strong> Most people need many tries. Each step is a lab you have already done. If one step keeps failing, go back to that lab, then return.</p>
-<p><strong>Think about it:</strong> which step needed the most attention? What would you practice before flying a real drone?</p><hr>
-<nav class="foot"><span><a href="lab-29-design-a-mission-to-a-brief.html">Previous: Lab 29</a></span><span><a href="index.html">All labs</a></span><span><a href="lab-31-return-to-home-and-why-its-altitude-matters.html">Next: Lab 31</a></span></nav>
+<p><strong>Do, part 2: the warning and the low level</strong></p>
+<ol>
+<li>Waiting ten minutes is dull, so speed up time. Press <strong>P</strong>, set the time selector to <strong>8x time</strong>, and press <strong>P</strong> again. Keep your hands off the keys and let the drone hover.</li>
+<li>At 30 % the battery bar reads "WARNING" and the task box tells you to plan your return. Nothing else happens.</li>
+<li>At about 23 %, press <strong>P</strong>, set <strong>1x time</strong>, and press <strong>P</strong> again.</li>
+<li>At 20 % the bar reads "LOW". The drone starts to return home by itself. The box at the top left reads "Returning home".</li>
+<li>Take it back: hold the <strong>Right arrow</strong> for a second. RTH is cancelled, and it will not start again on this flight. The decision is now yours.</li>
+</ol>
+<p><strong>Do, part 3: the emergency landing</strong></p>
+<ol>
+<li>Fly over the red barn, to the left of the pad, and hover about 10 m above its roof.</li>
+<li>Speed up time again (<strong>P</strong>, <strong>8x time</strong>, <strong>P</strong>). Around 15 % a message says the battery is getting short for the trip home. At about 12 %, go back to <strong>1x time</strong>.</li>
+<li>At 10 % the bar reads "CRITICAL". The box at the top left reads "Emergency landing". The drone is coming down, onto the barn.</li>
+<li>Try to stop it. Press <strong>H</strong>. Press <strong>L</strong>. Hold <strong>W</strong>. Nothing works. This landing cannot be cancelled.</li>
+<li>The right stick still works. Hold an arrow key and slide the drone clear of the barn, over open grass. Keep clear of the bales and the gate.</li>
+<li>Let it land. It touches down softly and switches the motors off.</li>
+</ol>
+<p><strong>Do, part 4: your own levels</strong></p>
+<ol>
+<li>Press <strong>R</strong>. In "Battery and return to home", set the warning level to 15 and leave the low level at 20. Press <strong>Enter</strong>.</li>
+<li>A red note refuses the change and says why. The old levels stay in use. Set the warning level back to 30.</li>
+</ol>
+<p><strong>You are done when</strong> you have seen WARNING, LOW, and CRITICAL on the battery bar, cancelled one automatic return, and landed an emergency landing on open grass.</p>
+<p><strong>Think about it:</strong> you may cancel the return at the low level, but not the landing at the critical level. Why is that a sensible rule? And why might a real voltage alarm sound during a hard climb, then go quiet in the hover?</p><hr>
+<nav class="foot"><span><a href="lab-31-return-to-home-and-why-its-altitude-matters.html">Previous: Lab 31</a></span><span><a href="index.html">All labs</a></span></nav>
 </main>
 </body>
 </html>

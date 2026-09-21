@@ -48,4 +48,4 @@ Orange arms mark the front of the drone. Pressing **1** at any time gives you al
 
 ---
 
-[Previous: Lab 29](lab-29-design-a-mission-to-a-brief.md) | [All labs](README.md)
+[Previous: Lab 29](lab-29-design-a-mission-to-a-brief.md) | [All labs](README.md) | [Next: Lab 31](lab-31-return-to-home-and-why-its-altitude-matters.md)

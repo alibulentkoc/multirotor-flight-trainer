@@ -74,20 +74,21 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <li><a href="#5-flight-modes">Flight modes</a></li>
 <li><a href="#6-your-first-flight">Your first flight</a></li>
 <li><a href="#7-crashes-battery-and-reset">Crashes, battery, and reset</a></li>
-<li><a href="#8-drills-and-scoring">Drills and scoring</a></li>
-<li><a href="#9-instruments">Instruments</a></li>
-<li><a href="#10-sensors-and-obstacle-avoidance">Sensors and obstacle avoidance</a></li>
-<li><a href="#11-wind-light-and-camera-views">Wind, light, and camera views</a></li>
-<li><a href="#12-flight-plan-window">Flight plan window</a></li>
-<li><a href="#13-survey-area-mode">Survey area mode</a></li>
-<li><a href="#14-waypoint-route-mode">Waypoint route mode</a></li>
-<li><a href="#15-importing-your-own-field">Importing your own field</a></li>
-<li><a href="#16-flying-a-plan">Flying a plan</a></li>
-<li><a href="#17-exporting-a-plan">Exporting a plan</a></li>
-<li><a href="#18-saved-data">Saved data</a></li>
-<li><a href="#19-troubleshooting">Troubleshooting</a></li>
-<li><a href="#20-known-limits">Known limits</a></li>
-<li><a href="#21-quick-reference-card">Quick reference card</a></li>
+<li><a href="#8-return-to-home-and-battery-failsafes">Return to home and battery failsafes</a></li>
+<li><a href="#9-drills-and-scoring">Drills and scoring</a></li>
+<li><a href="#10-instruments">Instruments</a></li>
+<li><a href="#11-sensors-and-obstacle-avoidance">Sensors and obstacle avoidance</a></li>
+<li><a href="#12-wind-light-and-camera-views">Wind, light, and camera views</a></li>
+<li><a href="#13-flight-plan-window">Flight plan window</a></li>
+<li><a href="#14-survey-area-mode">Survey area mode</a></li>
+<li><a href="#15-waypoint-route-mode">Waypoint route mode</a></li>
+<li><a href="#16-importing-your-own-field">Importing your own field</a></li>
+<li><a href="#17-flying-a-plan">Flying a plan</a></li>
+<li><a href="#18-exporting-a-plan">Exporting a plan</a></li>
+<li><a href="#19-saved-data">Saved data</a></li>
+<li><a href="#20-troubleshooting">Troubleshooting</a></li>
+<li><a href="#21-known-limits">Known limits</a></li>
+<li><a href="#22-quick-reference-card">Quick reference card</a></li>
 </ol>
 <hr>
 <h2 id="1-what-this-tool-is">1. What this tool is</h2>
@@ -109,13 +110,14 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <h2 id="3-screen-layout">3. Screen layout</h2>
 <p><strong>3D view (left).</strong> The flying field. Three status boxes sit at the top:</p>
 <ul>
-<li>Arm status: Disarmed, Armed, Taking off, Landing, or Crashed.</li>
+<li>Arm status: Disarmed, Armed, Taking off, Landing, Returning home, Emergency landing, or Crashed.</li>
 <li>Task box: the current drill, instructions, timers, and warnings.</li>
 <li>View: which camera you are using.</li>
 </ul>
 <p>Two on-screen sticks sit at the bottom corners. They show your current stick input from any source. You can also drag them with a mouse or a finger.</p>
+<p>The battery bar sits under the arm status. It shows percent, volts per cell, and the state in words: OK, WARNING, LOW, or CRITICAL. The bar and its edge also change color, but the word always says the same thing.</p>
 <p>Two inset pictures at the top right show the drone's front camera and down camera.</p>
-<p><strong>Side panel (right).</strong> Under the title, three small links open in a new tab: &quot;Learn&quot; (the Fundamentals pages, background reading on how a multirotor flies and how it is built), &quot;Labs&quot; (the lab sheets), and &quot;Manual&quot; (this manual). Then, from top to bottom: flight mode, action buttons, drills, instruments, sensors, conditions and view, keyboard help, controller setup, and results.</p>
+<p><strong>Side panel (right).</strong> Under the title, three small links open in a new tab: &quot;Learn&quot; (the Fundamentals pages, background reading on how a multirotor flies and how it is built), &quot;Labs&quot; (the lab sheets), and &quot;Manual&quot; (this manual). Then, from top to bottom: flight mode, action buttons, drills, instruments, sensors, battery and return to home, conditions and view, keyboard help, controller setup, and results.</p>
 <h2 id="4-controls">4. Controls</h2>
 <p>All control layouts follow Mode 2, the most common RC layout. The left stick is throttle and yaw. The right stick is pitch and roll.</p>
 <h3 id="keyboard">Keyboard</h3>
@@ -132,6 +134,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <tr><td>Space</td><td>Arm or disarm</td></tr>
 <tr><td>T</td><td>Automatic take off</td></tr>
 <tr><td>L</td><td>Automatic land</td></tr>
+<tr><td>H</td><td>Return to home. Press again to cancel it</td></tr>
 <tr><td>1, 2, 3</td><td>Position hold, altitude hold, stabilized</td></tr>
 <tr><td>C</td><td>Change camera view</td></tr>
 <tr><td>P</td><td>Open or close the flight plan window</td></tr>
@@ -150,6 +153,28 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <li>If your throttle stick does not spring back to center (a real RC transmitter), clear the box &quot;Throttle stick springs back to center&quot;.</li>
 </ol>
 <p>The mapping is remembered in the browser. Controller input has a small dead zone and an exponential curve for fine control near center.</p>
+<p><strong>Switches and buttons.</strong> Below the stick table, a second table assigns switches and buttons to actions:</p>
+<div class="scroll"><table>
+<thead>
+<tr><th>Action</th><th>What the input does</th></tr>
+</thead>
+<tbody>
+<tr><td>Return to home</td><td>Switch: on starts RTH, off cancels it. Button: each press starts or cancels</td></tr>
+<tr><td>Arm or disarm</td><td>Switch: on arms, off disarms. Button: each press toggles. Disarming in the air cuts the motors</td></tr>
+<tr><td>Land</td><td>Starts the automatic landing when the switch goes on, or on each press</td></tr>
+<tr><td>Change camera</td><td>Next camera view when the switch goes on, or on each press</td></tr>
+<tr><td>Flight mode (3-position switch)</td><td>Low is position hold, middle is altitude hold, high is stabilized</td></tr>
+<tr><td>Mode: Position hold, Altitude hold, Stabilized</td><td>Three separate buttons, one per mode</td></tr>
+</tbody>
+</table></div>
+<ol>
+<li>Click &quot;Assign&quot; in the row of the action. The row shows &quot;waiting...&quot;.</li>
+<li>Flip the switch or press the button on the controller. The first button pressed, or the first axis that moves about a quarter of its travel, is taken. The four stick axes are skipped.</li>
+<li>Check the &quot;Live&quot; lamp. It shows ON or OFF, or the selected mode for the 3-position switch.</li>
+<li>Check &quot;Type&quot;. A switch that stays where you put it should read &quot;Switch&quot;. A button that springs back should read &quot;Button&quot;. Many transmitters report their switches as buttons, so change the type if the guess is wrong.</li>
+<li>&quot;Clear&quot; removes the assignment. Clicking &quot;Assign&quot; again while it waits cancels.</li>
+</ol>
+<p>Actions fire only when an input changes. A switch that is already on when the page loads does nothing until you cycle it. If you cancel RTH with the right stick while the RTH switch is still on, RTH does not restart. Turn the switch off and on again to start it again. The assignments are saved with the stick mapping.</p>
 <h2 id="5-flight-modes">5. Flight modes</h2>
 <div class="scroll"><table>
 <thead>
@@ -197,9 +222,50 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 </ul>
 <p>Many consumer drones have a similar landing protection feature. Turn it off to practise real landings. It cannot help if you disarm in the air or fly into an obstacle.</p>
 <p>After a crash, a notice gives the reason. Press R to reset.</p>
-<p>Battery: the default endurance is about 10 minutes of hover. Hard flying drains it faster. The reading turns red below 20 percent. At 0 percent the drone lands by itself. The flight plan window lets you set a different endurance.</p>
+<p>Battery: the default endurance is about 10 minutes of hover. Hard flying drains it faster. The flight plan window lets you set a different endurance. Section 8 covers the battery warnings and what the drone does at each level.</p>
 <p>R (or the Reset button) puts the drone back on the pad with a full battery and restarts the selected drill.</p>
-<h2 id="8-drills-and-scoring">8. Drills and scoring</h2>
+<h2 id="8-return-to-home-and-battery-failsafes">8. Return to home and battery failsafes</h2>
+<h3 id="return-to-home-rth">Return to home (RTH)</h3>
+<p>Press H, or the &quot;Return to home&quot; button next to Land, while the drone is flying. The arm status shows &quot;Returning home&quot;, and the task box says which step it is in:</p>
+<ol>
+<li>If the drone is below the RTH altitude, it stops and climbs straight up to it. If it is already higher, it keeps its present height.</li>
+<li>It turns its nose toward home and flies there in a straight line at 6 m/s.</li>
+<li>Over home it descends, lands, and disarms.</li>
+</ol>
+<p>Closer than 3 m to home it skips the climb and simply lands.</p>
+<p>Set &quot;RTH altitude&quot; in the side panel, under &quot;Battery and return to home&quot;. The range is 5 to 120 m and the default is 30 m.</p>
+<p><strong>RTH does not steer around obstacles.</strong> It flies a straight line at one height. If a tree, a barn, or a power line stands on that line and reaches that height, the drone hits it. The RTH altitude must clear everything on the path, from anywhere you might fly. Look at the tallest thing on your field, add a margin, and set that. The vertical obstacle limits still act in RTH: the drone will not climb into a surface above it or descend onto an obstacle below it. It then waits there, and you must cancel and fly clear by hand.</p>
+<p>To cancel, move the right stick past one third, or press H again. You get control back at once in the flight mode you had selected. In altitude hold or stabilized mode the drone will drift, so be ready.</p>
+<h3 id="battery-model">Battery model</h3>
+<p>Percent is what the drone acts on. The voltage readings follow from it:</p>
+<ul>
+<li>The pack has 4 cells in series (4S). A resting cell reads 4.20 V when full, about 3.7 V at half, and 3.30 V when empty.</li>
+<li>Under load the voltage sags, because the current flows through the internal resistance of the pack. Climb hard and watch &quot;Per cell&quot; dip. Ease off and it recovers. A real pack does the same, which is why a voltage alarm often sounds first in a climb.</li>
+<li>&quot;Current&quot; is about 14 A in a hover and rises steeply with thrust.</li>
+<li>&quot;Time left&quot; is the percent remaining divided by the present draw. It drops when you fly hard and recovers when you hover. On the ground with the motors idling it reads very long.</li>
+</ul>
+<h3 id="the-three-battery-levels">The three battery levels</h3>
+<div class="scroll"><table>
+<thead>
+<tr><th>Level</th><th>Default</th><th>What happens</th></tr>
+</thead>
+<tbody>
+<tr><td>Warning</td><td>30 %</td><td>A message in the task box. Nothing else</td></tr>
+<tr><td>Low</td><td>20 %</td><td>Automatic RTH, when &quot;Automatic RTH on low battery&quot; is ticked. You may cancel it. It acts once per flight</td></tr>
+<tr><td>Critical</td><td>10 %</td><td>Emergency landing where the drone is. It cannot be cancelled</td></tr>
+</tbody>
+</table></div>
+<p>Each level announces itself once. The battery bar in the 3D view and the Battery line in the instruments show the state as a word as well as a color.</p>
+<p><strong>The emergency landing.</strong> The drone controls the descent: about 2 m/s down to 3 m, then the normal landing rate. The throttle stick does nothing. The right stick still moves the drone, as in position hold, and yaw still works. Use them to pick a clear spot. With obstacle avoidance on, the drone will not descend onto an obstacle, so fly it clear. Only a disarm gets past the emergency landing, and in the air that is a crash. If you take off again below the critical level, it lands again.</p>
+<p><strong>The return estimate.</strong> The trainer keeps estimating how much battery the trip home would take from where the drone is now: the climb to the RTH altitude, the cruise home against the present wind at that height, and the descent. Two things use it:</p>
+<ul>
+<li>When the battery falls below the estimate plus a 10 percent margin, the task box tells you to head back. Far from home or into a headwind this comes well before the low level.</li>
+<li>When the low level triggers and the estimate says the battery cannot reach home, the drone does not start RTH. It lands in place, as in the emergency landing, and the task box explains why with both numbers. Against a strong headwind the drone may not be able to make headway at all, and the message says so.</li>
+</ul>
+<p>The estimate uses the mean wind and leaves out gusts. That is what the margin is for. A higher RTH altitude costs more battery twice: for the climb, and because the wind is stronger up there.</p>
+<p><strong>Settings.</strong> The three levels are in the side panel. They must run warning &gt; low &gt; critical, and each must lie between 5 and 60 percent. A setting that breaks the rule is refused with a note, and the previous values stay in use. &quot;Beep at each battery level&quot; sounds one beep at warning, two at low, and three at critical. It is off each time the page loads.</p>
+<p>Planned flights follow the same rules. See section 17.</p>
+<h2 id="9-drills-and-scoring">9. Drills and scoring</h2>
 <p>Pick a drill in the side panel. The timer starts when the drone rises above 0.3 m. Scores run from 0 to 100. A crash fails the attempt.</p>
 <div class="scroll"><table>
 <thead>
@@ -222,7 +288,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <li>Repeat with 3 to 5 m/s wind.</li>
 <li>Nose-in hover in stabilized mode with wind. This is the hardest combination.</li>
 </ol>
-<h2 id="9-instruments">9. Instruments</h2>
+<h2 id="10-instruments">10. Instruments</h2>
 <ul>
 <li><strong>Artificial horizon.</strong> Blue is sky, brown is ground. The horizon line tilts opposite to your roll and drops when the nose rises. The pitch ladder is marked every 10 deg.</li>
 <li><strong>Altitude AGL.</strong> Height above the ground below the drone.</li>
@@ -231,10 +297,10 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <li><strong>Ground speed.</strong> Horizontal speed over the ground.</li>
 <li><strong>Heading.</strong> Compass direction of the nose. 000 is north, away from you at start.</li>
 <li><strong>Distance.</strong> Straight-line distance from your eyes to the drone.</li>
-<li><strong>Battery.</strong> Percent remaining.</li>
+<li><strong>Battery.</strong> Percent remaining. The section &quot;Battery and return to home&quot; further down the side panel adds the state in words (OK, WARNING, LOW, or CRITICAL), the pack voltage, the voltage per cell, the current, and the minutes left at the present draw. See section 8.</li>
 <li><strong>Motor bars.</strong> Output of each motor. Watch them to learn how a quadcopter moves: the rear pair speeds up to pitch forward, one side speeds up to roll, and one diagonal pair speeds up to yaw.</li>
 </ul>
-<h2 id="10-sensors-and-obstacle-avoidance">10. Sensors and obstacle avoidance</h2>
+<h2 id="11-sensors-and-obstacle-avoidance">11. Sensors and obstacle avoidance</h2>
 <p><strong>Range display.</strong> The triangle is the drone, nose up. Four arcs show the distance to the nearest surface in front, behind, left, and right. Each direction uses a fan of five ultrasonic beams with 6 m reach, wide enough to cover the diagonals. Green is beyond 3 m. Amber is 1.5 to 3 m. Red is under 1.5 m. No arc means nothing within range.</p>
 <p><strong>Range up.</strong> An upward ranger with 6 m reach. It sees the tree canopy, roof edges, and anything else above the drone.</p>
 <p><strong>Range down.</strong> A downward ranger with 8 m reach. It points along the body axis, so it reads long when the drone is tilted, as a real one does. It also sees the tops of obstacles.</p>
@@ -254,7 +320,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 </ul>
 <p>In altitude hold and stabilized modes you get a warning only. Those modes are for learning without assistance.</p>
 <p>The practice field has a barn, stacked round bales, a tree, and a gate with a 3.2 m opening.</p>
-<h2 id="11-wind-light-and-camera-views">11. Wind, light, and camera views</h2>
+<h2 id="12-wind-light-and-camera-views">12. Wind, light, and camera views</h2>
 <p><strong>Wind at 10 m.</strong> 0 to 12 m/s. This is the speed at the standard 10 m reference height. Wind is slower near the ground and follows a logarithmic profile. At 1.2 m you feel about 65 percent of the set value. At 40 m you feel about 120 percent. Gusts vary the speed by up to nearly 50 percent.</p>
 <p><strong>Wind from.</strong> The compass direction the wind blows from. 270 deg means wind from the west, pushing the drone east. The windsock on the field shows direction and strength.</p>
 <p><strong>Sun height.</strong> Sun elevation above the horizon, 8 to 80 deg. It changes scene brightness, shadow length, and the light sensor reading.</p>
@@ -265,7 +331,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <li>Chase: the camera follows behind the drone. Good for demonstrations and videos.</li>
 <li>Onboard (FPV): the view from the drone.</li>
 </ul>
-<h2 id="12-flight-plan-window">12. Flight plan window</h2>
+<h2 id="13-flight-plan-window">13. Flight plan window</h2>
 <p>Open it with the &quot;Open flight plan&quot; button or the P key. It floats over the 3D view. You can leave it open while the drone flies.</p>
 <p><strong>The map.</strong> North is up. The orange H is the home point, where you stand. The yellow triangle is the drone. A scale bar sits at the bottom left.</p>
 <div class="scroll"><table>
@@ -275,11 +341,11 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <tbody>
 <tr><td>Survey area / Waypoint route</td><td>Choose the planning mode</td></tr>
 <tr><td>Undo point</td><td>Remove the last corner or waypoint</td></tr>
-<tr><td>Clear</td><td>Remove all corners or waypoints in the current mode, and the flown track. On an imported plan with no field image, clearing the last point also returns to the practice field. See section 15</td></tr>
+<tr><td>Clear</td><td>Remove all corners or waypoints in the current mode, and the flown track. On an imported plan with no field image, clearing the last point also returns to the practice field. See section 16</td></tr>
 <tr><td>Whole field</td><td>Make the survey area cover the whole loaded image</td></tr>
 <tr><td>Zoom in / Zoom out</td><td>Change the map scale</td></tr>
 <tr><td>Fit to plan</td><td>Frame the home point, image, and plan</td></tr>
-<tr><td>Set home</td><td>Move the home point on your own field. Press it, then click the map where you will stand and take off. Greyed out on the practice field, where home is fixed. See section 15</td></tr>
+<tr><td>Set home</td><td>Move the home point on your own field. Press it, then click the map where you will stand and take off. Greyed out on the practice field, where home is fixed. See section 16</td></tr>
 </tbody>
 </table></div>
 <p>Click the map to add a point. Drag an existing point to move it.</p>
@@ -329,7 +395,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 </ul>
 <p>The time estimate includes rough allowances for turns, climb, and descent.</p>
 <p>A glossary, &quot;Terms you need to know&quot;, sits at the bottom of the window.</p>
-<h2 id="13-survey-area-mode">13. Survey area mode</h2>
+<h2 id="14-survey-area-mode">14. Survey area mode</h2>
 <p>Use this to map a field with a back-and-forth (lawnmower) pattern.</p>
 <ol>
 <li>Select &quot;Survey area&quot;.</li>
@@ -353,7 +419,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <li>Turn the flight lines to run along the long side of the field. There are fewer turns and the time drops.</li>
 <li>Align the lines with the wind. Crosswind makes the drone crab and skews the footprints.</li>
 </ul>
-<h2 id="14-waypoint-route-mode">14. Waypoint route mode</h2>
+<h2 id="15-waypoint-route-mode">15. Waypoint route mode</h2>
 <p>Use this for inspection paths, scouting points, or any free route.</p>
 <ol>
 <li>Select &quot;Waypoint route&quot;.</li>
@@ -372,7 +438,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 </table></div>
 <p>The drone climbs at home to the first waypoint's altitude, flies the route, returns home, and lands. When two waypoints differ in altitude, it climbs or descends at the start of that leg before moving on.</p>
 <p>Up to 200 waypoints are kept from an imported file.</p>
-<h2 id="15-importing-your-own-field">15. Importing your own field</h2>
+<h2 id="16-importing-your-own-field">16. Importing your own field</h2>
 <p>Use the file picker at the top right of the flight plan window. You can also drop files onto the 3D view. An image copied to the clipboard can be pasted with Ctrl+V.</p>
 <p>When an image is loaded, it becomes the ground north of the home point and the map background.</p>
 <p><strong>Your own field replaces the practice field.</strong> As soon as you load a field image or import a plan, even a plan with no image (KML, GeoJSON, or CSV only), you are on your own field:</p>
@@ -442,7 +508,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <li>GeoTIFFs with more than three bands or 16-bit data may not decode. Export an 8-bit RGB copy.</li>
 <li>Very large images are reduced to 4096 pixels on the long side (2048 for GeoTIFF).</li>
 </ul>
-<h2 id="16-flying-a-plan">16. Flying a plan</h2>
+<h2 id="17-flying-a-plan">17. Flying a plan</h2>
 <ol>
 <li>Make a valid plan. The &quot;Fly this plan&quot; button becomes active.</li>
 <li>Press &quot;Fly this plan&quot;. The drone arms, climbs over home to the plan altitude, flies the path, returns home, and lands.</li>
@@ -460,22 +526,25 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <ul>
 <li>Move the right stick (or arrow keys) past about one third. The plan stops at once and you are in your selected flight mode.</li>
 <li>&quot;Stop and hold&quot; stops the plan and hovers.</li>
-<li>At 20 percent battery the drone abandons the plan, returns home, and lands.</li>
+<li>The battery levels of section 8 apply. At the low level (20 percent unless you change it) the drone abandons the plan and returns home: at the RTH altitude, or at its present height if that is higher. You may cancel that RTH with the right stick. If the estimate says home is out of reach, it lands in place instead.</li>
+<li>With &quot;Automatic RTH on low battery&quot; off, the plan carries on past the low level. At the critical level the drone lands where it is.</li>
+<li>The plan warning &quot;Needs more than 80 % of the battery&quot; follows the low level: with a low level of 30 percent it becomes 70 %.</li>
 </ul>
 <p>After loading your own field, switch to the pilot view during a plan. It shows how small the drone looks at survey distance and height. That is a direct lesson in visual line of sight.</p>
-<h2 id="17-exporting-a-plan">17. Exporting a plan</h2>
+<h2 id="18-exporting-a-plan">18. Exporting a plan</h2>
 <p><strong>Export KML.</strong> Writes the home point, the survey boundary, the flight path with heights above ground, and every waypoint. It opens in Google Earth. KML export needs a georeferenced plan, so import a KML, KMZ, GeoTIFF, GeoJSON, CSV, or an image with a degree-based world file first.</p>
 <p><strong>Export CSV.</strong> One row per waypoint: number, latitude, longitude, altitude AGL, speed, and action. Without a georeference, the position columns are meters east and meters north of home.</p>
 <p>The exported text always appears in a box for copying. On GitHub Pages or from a local file, the browser also saves the file directly.</p>
 <p>The CSV is a general waypoint list. It is not in the exact column layout of any one flight app. Rearrange the columns to suit the app you use.</p>
-<h2 id="18-saved-data">18. Saved data</h2>
+<h2 id="19-saved-data">19. Saved data</h2>
 <p>The browser stores two things for this page, on this computer only:</p>
 <ul>
 <li>Drill results: the latest 40 attempts. The Results list shows the latest 10. &quot;Clear results&quot; deletes them.</li>
-<li>Controller mapping.</li>
+<li>Controller mapping, including the switch and button assignments.</li>
+<li>RTH altitude, the three battery levels, and the automatic RTH choice.</li>
 </ul>
 <p>Nothing is sent anywhere. Plans and imported images are not saved. Export your plan before closing the page.</p>
-<h2 id="19-troubleshooting">19. Troubleshooting</h2>
+<h2 id="20-troubleshooting">20. Troubleshooting</h2>
 <div class="scroll"><table>
 <thead>
 <tr><th>Problem</th><th>Likely cause and fix</th></tr>
@@ -500,16 +569,18 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 <tr><td>Text looks wider than expected</td><td>The display font could not load. The tool still works</td></tr>
 </tbody>
 </table></div>
-<h2 id="20-known-limits">20. Known limits</h2>
+<h2 id="21-known-limits">21. Known limits</h2>
 <ul>
 <li>The ground is flat. Elevation is a constant offset, so terrain following is explained in the glossary but not simulated.</li>
 <li>The airframe is generic. Stick feel is plausible but not matched to a specific drone.</li>
 <li>Simulator practice transfers well for orientation and coordination. It transfers less well for depth perception, real wind, and nerves.</li>
 <li>Georeferencing uses a flat local plane around home. This is accurate to centimeters over a farm field and degrades over several kilometers.</li>
 <li>The 400 ft ceiling and line-of-sight checks follow US Part 107 conventions. They are teaching prompts, not legal advice. Check the rules that apply where you fly.</li>
+<li>RTH flies a straight line at one height and does not steer around obstacles.</li>
+<li>The battery model is simple: a fixed voltage curve, one internal resistance, no temperature or aging effects.</li>
 <li>No link to a physical drone is included in this version.</li>
 </ul>
-<h2 id="21-quick-reference-card">21. Quick reference card</h2>
+<h2 id="22-quick-reference-card">22. Quick reference card</h2>
 <pre><code>LEFT STICK                     RIGHT STICK
   W  throttle up                 Up     pitch forward
   S  throttle down               Down   pitch back
@@ -518,6 +589,7 @@ ol.toc{columns:2;column-gap:2.4rem} ol.toc li{break-inside:avoid}
 
 Shift  full deflection          Space  arm / disarm
 T      auto take off            L      auto land
+H      return to home, or cancel it
 1      position hold            2      altitude hold
 3      stabilized               C      change camera
 P      flight plan window       R      reset
@@ -525,6 +597,9 @@ P      flight plan window       R      reset
 Front of drone = ORANGE.   Home pad = orange ring.   You stand 7 m south of it.
 
 Safe touchdown: under 1 m/s down, level, not sliding.
+
+RTH flies straight home at one height. It does NOT steer around obstacles.
+Battery: warning 30 %, low 20 % (RTH), critical 10 % (lands now, no cancel).
 
 GSD (cm/px)      = sensor width x altitude x 100 / (focal length x image width)
 Line spacing     = footprint width  x (1 - side overlap)

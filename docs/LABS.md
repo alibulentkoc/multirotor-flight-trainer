@@ -1,6 +1,6 @@
-# Multirotor Flight Trainer: 30 Labs
+# Multirotor Flight Trainer: 32 Labs
 
-Thirty short labs in three levels. Every lab stands alone and repeats its own start steps, so you can do them in any order. Within a level, the order shown is the easiest path.
+Thirty-two short labs: three levels, and an extra group on failsafes. Every lab stands alone and repeats its own start steps, so you can do them in any order. Within a level, the order shown is the easiest path.
 
 Trainer address: https://alibulentkoc.github.io/multirotor-flight-trainer/
 
@@ -29,6 +29,7 @@ Orange arms mark the front of the drone. Pressing **1** at any time gives you al
 | 1. Getting started | 1 to 10 | 10 to 20 min | The drone helps you with everything. You learn the controls, the sensors, and the flight planner. |
 | 2. Less help | 11 to 20 | 15 to 25 min | Each lab takes away one kind of help, or asks for one measurement or decision. You will crash sometimes. That is expected. |
 | 3. On your own | 21 to 30 | 20 to 40 min | You fly by hand in wind and design complete missions. Expect many tries. Every skill here was practiced in an earlier lab. |
+| Extra. Failsafes | 31 and 32 | 15 to 25 min | What the drone does by itself when something runs out: return to home, the battery levels, and the emergency landing. Do these after Lab 8. |
 
 ## Your progress
 
@@ -78,6 +79,13 @@ Tick each lab when you reach its "You are done when" line. Write your best score
 | [ ] | 28 | A field from a screenshot | |
 | [ ] | 29 | Design a mission to a brief | |
 | [ ] | 30 | Checkride | |
+
+**Extra: Failsafes**
+
+| Done | Lab | Title | Best score |
+|---|---|---|---|
+| [ ] | 31 | Return to home, and why its altitude matters | |
+| [ ] | 32 | Battery warnings and the emergency landing | |
 
 ---
 
@@ -926,3 +934,88 @@ These labs are hard on purpose. You fly by hand, in wind, without the safety fea
 **This is hard.** Most people need many tries. Each step is a lab you have already done. If one step keeps failing, go back to that lab, then return.
 
 **Think about it:** which step needed the most attention? What would you practice before flying a real drone?
+
+---
+
+# Extra. Failsafes
+
+What the drone does by itself when something runs out: return to home, the battery levels, and the emergency landing. Do these after Lab 8. The extra key for these two labs is **H**: return to home, press again to cancel.
+
+---
+
+## Lab 31. Return to home, and why its altitude matters
+
+**Goal:** see what return to home (RTH) does, watch it fly into the tree when its altitude is too low, then fix it.
+
+**Start**
+1. Open the trainer address.
+2. Click once on the picture of the field.
+3. Press **1** for Position hold.
+4. In the side panel, find the section "Battery and return to home". "RTH altitude" reads 30.
+
+**Do, part 1: a normal return**
+1. Press **T**. Hold **W** and climb to about 10 m. Watch "Altitude AGL".
+2. Hold the **Up arrow** for about five seconds. The drone flies away from you.
+3. Press **H**. The box at the top left reads "Returning home".
+4. Watch what it does, and read the task box at each step. It stops. It climbs straight up to 30 m. It turns its nose toward home. It flies back, comes down, lands, and switches the motors off.
+5. Do it once more, but this time take the drone back. Take off, fly away, and press **H**. While it climbs, hold the **Right arrow** for a second. The task box says RTH is cancelled. You are flying again.
+
+**Do, part 2: set it too low**
+1. Press **R**. Click in the "RTH altitude" box, type 5, and press **Enter**. Then click once on the picture of the field.
+2. Find the tree. It stands ahead of you and to the left, next to the windsock.
+3. Press **T**. Climb to about 3 m. Fly past the tree and stop about 5 m behind it, so the tree stands between the drone and the orange ring.
+4. Look at the small "Front camera" picture. Turn with **A** or **D** until the tree is in the middle of it, with the orange ring behind the tree.
+5. Check the Sensors section: "Obstacle avoidance" is ticked. Remember that.
+6. Press **H**. The drone climbs to 5 m and flies straight for home. The tree is about 6 m tall.
+7. It hits the tree, and a notice says why. If it slips past the thin tip instead, look how close it came, press **R**, and line it up again.
+
+**Do, part 3: fix it**
+1. Press **R**. Measure the tree: take off, fly next to its top, and read "Altitude AGL".
+2. Choose an RTH altitude that clears the tree with room to spare. 10 m is a good choice here. Type it in, press **Enter**, and click once on the picture of the field.
+3. Fly behind the tree again, line it up again, and press **H**.
+4. The drone climbs to your new altitude, passes over the tree, and lands at home.
+
+**You are done when** one return has ended in the tree, and one has passed over it and landed at home.
+
+**Think about it:** obstacle avoidance was on, and the drone still hit the tree. RTH flies a straight line at one height and does not steer around anything. On a real field, what is the tallest thing between you and the far corner? How much room would you add, and why not simply set 120 m every time?
+
+---
+
+## Lab 32. Battery warnings and the emergency landing
+
+**Goal:** watch the battery pass all three levels, then steer an emergency landing to a clear spot.
+
+**Start**
+1. Open the trainer address.
+2. Click once on the picture of the field.
+3. Press **1** for Position hold.
+4. In the side panel, find "Battery and return to home". The levels read 30, 20, and 10. "Automatic RTH on low battery" is ticked.
+5. Find the battery bar at the top left of the picture. It reads "100 %", "4.20 V/cell", and "OK".
+
+**Do, part 1: voltage**
+1. Press **T**. Look at "Per cell" in the section "Battery and return to home". It is already below 4.20 V, because the motors are drawing current.
+2. Hold **W** with **Shift** for three seconds. "Current" jumps and "Per cell" dips. Let go. The voltage comes back. This dip is called sag.
+3. Climb to about 10 m. Read "Time left". Hold **W** again and watch it drop, then recover in the hover.
+
+**Do, part 2: the warning and the low level**
+1. Waiting ten minutes is dull, so speed up time. Press **P**, set the time selector to **8x time**, and press **P** again. Keep your hands off the keys and let the drone hover.
+2. At 30 % the battery bar reads "WARNING" and the task box tells you to plan your return. Nothing else happens.
+3. At about 23 %, press **P**, set **1x time**, and press **P** again.
+4. At 20 % the bar reads "LOW". The drone starts to return home by itself. The box at the top left reads "Returning home".
+5. Take it back: hold the **Right arrow** for a second. RTH is cancelled, and it will not start again on this flight. The decision is now yours.
+
+**Do, part 3: the emergency landing**
+1. Fly over the red barn, to the left of the pad, and hover about 10 m above its roof.
+2. Speed up time again (**P**, **8x time**, **P**). Around 15 % a message says the battery is getting short for the trip home. At about 12 %, go back to **1x time**.
+3. At 10 % the bar reads "CRITICAL". The box at the top left reads "Emergency landing". The drone is coming down, onto the barn.
+4. Try to stop it. Press **H**. Press **L**. Hold **W**. Nothing works. This landing cannot be cancelled.
+5. The right stick still works. Hold an arrow key and slide the drone clear of the barn, over open grass. Keep clear of the bales and the gate.
+6. Let it land. It touches down softly and switches the motors off.
+
+**Do, part 4: your own levels**
+1. Press **R**. In "Battery and return to home", set the warning level to 15 and leave the low level at 20. Press **Enter**.
+2. A red note refuses the change and says why. The old levels stay in use. Set the warning level back to 30.
+
+**You are done when** you have seen WARNING, LOW, and CRITICAL on the battery bar, cancelled one automatic return, and landed an emergency landing on open grass.
+
+**Think about it:** you may cancel the return at the low level, but not the landing at the critical level. Why is that a sensible rule? And why might a real voltage alarm sound during a hard climb, then go quiet in the hover?

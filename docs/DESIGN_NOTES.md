@@ -25,14 +25,16 @@ The split is mechanical. Fragments in `src/js` are concatenated in file-name ord
 
 | Fragment | Contents |
 |---|---|
-| 00-sim.js | Flight model, controllers, missions, telemetry. Global scope, headless-testable |
+| 00-sim.js | Flight model, controllers, missions, return to home, battery model and failsafes, telemetry. Global scope, headless-testable |
 | 10-app-start.js | Opens the app scope, storage helper |
 | 20-scene.js | Renderer, camera, lights |
 | 21-forage.js | Forage texture, clover truth mask, fescue tufts |
 | 22-field-objects.js | Obstacles, colliders, pilot, trees, windsock, drone model |
 | 30-drills.js | Drill definitions, scoring, results log |
-| 40-input.js | Keyboard, touch sticks, gamepad mapping |
+| 40-input.js | Keyboard, touch sticks, gamepad mapping, the Assign table for controller actions |
+| 41-actions.js | Pure logic for switches and buttons assigned to actions (ctionStep, detectSource). Headless-testable |
 | 50-ui.js | Side panel, instruments, task messages |
+| 51-failsafe.js | RTH and battery settings, battery bar, failsafe messages, beep |
 | 60-environment.js | Sun, cloud, wind controls |
 | 61-sensors.js | Rangers, light, airspeed, inset cameras, collision check |
 | 70-planner.js | Georeference math, pure plan computation (`planCompute`), home shift (`shiftHome`), map drawing, map interaction |
@@ -46,14 +48,35 @@ The split is mechanical. Fragments in `src/js` are concatenated in file-name ord
 
 The UI talks to the aircraft only through this surface. A future hardware link must implement the same one.
 
-- `command(name)`: arm, disarm, takeoff, land, emergency
+- `command(name)`: arm, disarm, takeoff, land, emergency, rth, cancel_rth
 - `step(dt, sticks)`: sticks are thr, yaw, pitch, roll in -1 to 1
 - `startMission(wps, speed, trig)`, `stopMission()`
-- `telemetry()`: pitch, roll, heading_deg, altitude_m, vz, ground_speed, x, z, battery, armed, on_ground, motors
-- Inputs set by the app: `mode`, `wind`, `windDir`, `avoid` (range readings), `landAssist`, `thrCentered`
+- `telemetry()`: pitch, roll, heading_deg, altitude_m, vz, ground_speed, x, z, battery, armed, on_ground, motors, voltage, cell_voltage, current_a, minutes_left, battery_state, rth_needed_pct, auto, auto_reason, rth_phase
+- Inputs set by the app: `mode`, `wind`, `windDir`, `avoid` (range readings), `landAssist`, `thrCentered`, `rthAlt`, `battCfg` (`warn`, `low`, `crit`, `autoRth`)
+
+## Return to home and battery failsafes
+
+All of this is in `00-sim.js`, with no DOM code. Constants are in `PARAMS.rth` and `PARAMS.batt`.
+
+- `auto` has two new states. `'rth'` runs the phases `climb`, `cruise`, `descend`, `land` (in `sim.rth.phase`). `'critland'` is the emergency landing. `autoReason` says why: `pilot`, `battery`, `mission`, `unreachable`, or `critical`.
+- RTH target height is `max(current height, rthAlt)`, fixed when RTH starts. Closer than `rth.nearHome` it skips the climb. RTH reuses the mission velocity path (`mv`), so the vertical avoidance caps apply and nothing else does. It does not route around obstacles, by decision: the lesson is that the RTH altitude must clear the path. A drone blocked under a surface waits there until the pilot cancels.
+- Cancel: right stick past `rth.cancelStick` (one third), or `command('cancel_rth')`. Control returns in `sim.mode`. RTH stays cancellable through its own landing phase.
+- `'critland'` locks `command()`: only `disarm` and `emergency` get through, and `startMission` is refused. The sim sets the sink rate. The pilot's roll, pitch, and yaw pass through the position hold path, whatever mode is selected, so horizontal avoidance still acts.
+- Battery: percent is the state. `battLoad`, `battOcv`, `battVolts`, `battCfgError`, and `rthEstimate` are pure functions. Hover current is a parameter, so pack capacity follows from `batterySeconds` (a longer endurance means a bigger pack, not a smaller draw). Voltage is the open-circuit curve minus current times internal resistance.
+- `battCheck()` runs at the top of every step. Warning and low latch once per flight (`battLatch`, cleared by `reset()`), so a pilot who cancels the automatic RTH is not overruled. Critical is a condition, not a latch: whenever the drone is airborne below it, it lands.
+- At the low level `rthEstimate` decides between RTH and landing in place. The estimate covers climb, cruise against the mean wind at the cruise height (with the ground speed reduced when the tilt limit cannot hold `rth.speed`, and `Infinity` when there is no headway), descent, and landing. It is refreshed every `batt.estimateEvery` seconds for the margin warning and telemetry. A test compares it with a flown return.
+- Planned flights have no battery rule of their own any more. `battCheck` hands a mission over to `'rth'` or `'critland'` exactly as in manual flight. With automatic RTH off, a plan flies on to the critical level. The planner's battery warning uses `100 - battCfg.low` percent.
+- Events added to `onEvent`: `rth`, `rth_cancel`, `batt_warn`, `batt_low`, `batt_crit`, `batt_margin`, `batt_unreachable`.
+- UI side: `51-failsafe.js` holds the settings (validated with `battCfgError`, stored under `uavtrainer.failsafe.v1`), the battery bar, the task box messages, and the optional beep. The bar always carries the state as a word. The beep starts off on every load, because a browser only allows sound after a click.
+
+## Controller actions
+
+- `41-actions.js` is pure (no DOM, no gamepad API) and the tests load the whole file. `actionStep(assign, prev, inputs, ctx)` returns the commands to run and the next state. `detectSource` implements the Assign flow. Constants are in `ACTION_PARAMS`.
+- Everything is edge-triggered. The first sight of a source records its state without firing, so a switch left on at load, or left on after a stick cancel of RTH, does nothing until it is cycled.
+- A source is latching (switch) or momentary (button). Detection guesses axis = switch and button = button, and the table lets the user override it, because many transmitters report switches as buttons.
+- Assignments are stored as `padMap.actions` under the existing `uavtrainer.pad.v1` key, so older saved mappings still load.
 
 ## Pure planner logic
-
 Everything in `70-planner.js` from `function mkGeo` down to `function geoNote` is pure: no DOM, no three.js, no reads of planner state other than the default `geo`. `test/run.js` loads that range headless, so do not put DOM code inside it.
 
 - `planCompute(inp)` takes the camera, altitude, overlaps in percent, speed, line direction, endurance, mode, `poly`, and `route`, and returns the plan object (`gsd`, `W`, `L`, `spacing`, `trig`, `interval`, `lines`, `shots`, `wps`, `area`, `dist`, `time`, `ok`). `computePlan()` is a thin wrapper: it reads and clamps the inputs, calls `planCompute`, and renders.

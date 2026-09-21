@@ -56,7 +56,7 @@
         <div class="row3" style="grid-template-columns:1fr 1fr"><button id="expKML">Export KML</button><button id="expCSV">Export CSV</button></div>
         <p class="note" id="exportMsg" style="margin-top:4px"></p>
         <textarea id="exportText" readonly hidden aria-label="Exported plan text"></textarea>
-        <p class="note">Move the right stick at any time to take over. At 20 % battery the drone abandons the plan and returns home.</p>
+        <p class="note">Move the right stick at any time to take over. At the low battery level (side panel, 20 % unless you change it) the drone abandons the plan and returns home at the RTH altitude, or at its present height if that is higher.</p>
       </div>
     </div>
     <details>
@@ -83,6 +83,7 @@
       </dl>
     </details>
   </div>
+  <div id="battBox" class="ok" role="status" aria-label="Battery"><div class="battText"><span id="battPct">100 %</span><span id="battCell">4.20 V/cell</span><b id="battState">OK</b></div><div class="battBar"><i id="battFill"></i></div></div>
   <div id="notice" role="status"><h2></h2><p></p></div>
   <div class="pip" id="pipF"><span>Front camera</span></div>
   <div class="pip" id="pipD"><span>Down camera</span></div>
@@ -106,8 +107,9 @@
     <div class="row">
       <button id="bArm">Arm</button>
       <button id="bTakeoff">Take off</button>
-      <button id="bLand">Land</button>
       <button id="bReset">Reset</button>
+      <button id="bLand">Land</button>
+      <button id="bRth" title="Return to home (H)">Return to home</button>
     </div>
     <button id="bPlan" style="width:100%; margin-top:8px">Open flight plan</button>
   </section>
@@ -160,6 +162,27 @@
   </section>
 
   <section>
+    <h2 class="s">Battery and return to home</h2>
+    <dl>
+      <dt>Battery state</dt><dd id="tBatState">OK</dd>
+      <dt>Voltage</dt><dd id="tVolt">16.8 V</dd>
+      <dt>Per cell</dt><dd id="tCell">4.20 V</dd>
+      <dt>Current</dt><dd id="tAmp">0 A</dd>
+      <dt>Time left at this draw</dt><dd id="tMin">n/a</dd>
+    </dl>
+    <div class="f" style="margin-top:10px">
+      <label for="rthAlt">RTH altitude (m)</label><input type="number" id="rthAlt" min="5" max="120" value="30">
+      <label for="bWarn">Warning level (%)</label><input type="number" id="bWarn" min="5" max="60" value="30">
+      <label for="bLow">Low level: return home (%)</label><input type="number" id="bLow" min="5" max="60" value="20">
+      <label for="bCrit">Critical level: land now (%)</label><input type="number" id="bCrit" min="5" max="60" value="10">
+    </div>
+    <p class="note" id="battMsg" role="status"></p>
+    <label class="chk"><input type="checkbox" id="autoRth" checked> Automatic RTH on low battery</label>
+    <label class="chk"><input type="checkbox" id="battBeep"> Beep at each battery level</label>
+    <p class="note">RTH climbs to the RTH altitude if it is below it, flies straight home, and lands. It does not steer around obstacles, so the RTH altitude must clear everything on the way. Move the right stick or press H to cancel. The emergency landing at the critical level cannot be cancelled, but the right stick still moves the drone so you can pick a clear spot.</p>
+  </section>
+
+  <section>
     <h2 class="s">Conditions and view</h2>
     <label class="ctl">Wind at 10 m<input type="range" id="wind" min="0" max="12" step="0.5" value="0"><output id="windOut">0 m/s</output></label>
     <label class="ctl">Wind from<input type="range" id="windDir" min="0" max="345" step="15" value="270"><output id="windDirOut">270 deg</output></label>
@@ -182,6 +205,7 @@
       <tr><td>Shift</td><td>Hold for full stick deflection</td></tr>
       <tr><td>Space</td><td>Arm or disarm</td></tr>
       <tr><td>T / L</td><td>Automatic take off / land</td></tr>
+      <tr><td>H</td><td>Return to home, or cancel it</td></tr>
       <tr><td>1 2 3</td><td>Position, altitude, stabilized mode</td></tr>
       <tr><td>C</td><td>Change camera</td></tr>
       <tr><td>P</td><td>Open or close the flight plan</td></tr>
@@ -193,6 +217,8 @@
     <summary>Controller setup</summary>
     <p class="note" id="padStatus">No controller detected. Plug in a USB game controller or RC transmitter, then move a stick.</p>
     <div class="scroll"><table class="map" id="padMap"></table></div>
+    <div class="scroll"><table class="map" id="padActions"></table></div>
+    <p class="note" id="assignMsg" role="status"></p>
     <label class="note" style="display:block"><input type="checkbox" id="thrCentered" checked> Throttle stick springs back to center (game controller). Clear this for an RC transmitter.</label>
   </details>
 

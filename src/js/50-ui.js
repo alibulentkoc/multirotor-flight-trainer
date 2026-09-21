@@ -65,10 +65,10 @@ function updateUI(dt){
   $('tHdg').textContent = ('00' + Math.round(tel.heading_deg) % 360).slice(-3) + ' deg';
   $('tDist').textContent = Math.hypot(tel.x, tel.altitude_m - 1.6, tel.z - 7).toFixed(1) + ' m';
   updateSensorUI();
-  $('tBat').textContent = Math.round(tel.battery) + ' %'; $('tBat').style.color = tel.battery < 20 ? 'var(--warn)' : '';
+  updateBatteryUI(tel);
   for (var i = 0; i < 4; i++) $('m' + i).style.width = (tel.motors[i]*100).toFixed(0) + '%';
   var ap = $('armPill');
-  ap.textContent = sim.crashed ? 'Crashed' : (sim.auto === 'takeoff' ? 'Taking off' : sim.auto === 'land' ? 'Landing' : sim.armed ? 'Armed' : 'Disarmed');
+  ap.textContent = sim.crashed ? 'Crashed' : (sim.auto === 'takeoff' ? 'Taking off' : sim.auto === 'land' ? 'Landing' : sim.auto === 'rth' ? 'Returning home' : sim.auto === 'critland' ? 'Emergency landing' : sim.armed ? 'Armed' : 'Disarmed');
   ap.className = 'pill' + (sim.armed ? ' armed' : '');
   $('bArm').textContent = sim.armed ? 'Disarm' : 'Arm';
   $('bTakeoff').disabled = !sim.onGround || !!sim.crashed; $('bLand').disabled = sim.onGround;
@@ -82,9 +82,10 @@ function updateUI(dt){
   if (sim.avoiding) msg = '<b>Obstacle avoidance is holding you back.</b> ' + near.toFixed(1) + ' m to the nearest surface.' + (sens.downObs && sens.down < 2 ? ' There is an obstacle below: move clear before descending.' : '');
   else if (sim.assisting) msg = '<b>Landing assist is slowing your descent.</b>';
   else if (near < 2 && !sim.onGround) msg = '<b>Obstacle ' + near.toFixed(1) + ' m away.</b> ' + (sim.mode === 'pos' ? '' : 'Avoidance only acts in position hold. ') + 'Ease off.';
-  if (sim.auto === 'mission' && sim.mission) msg = '<b>Flying the plan.</b> Waypoint ' + (sim.mission.idx + 1) + ' of ' + sim.mission.wps.length + ', ' + sim.photos.length + ' photos taken.' + (sim.mission.rth ? ' <b>Low battery: returning home.</b>' : '');
+  if (sim.auto === 'mission' && sim.mission) msg = '<b>Flying the plan.</b> Waypoint ' + (sim.mission.idx + 1) + ' of ' + sim.mission.wps.length + ', ' + sim.photos.length + ' photos taken.';
   else if (sim.auto === 'land' && sim.photos.length) msg = '<b>Plan complete.</b> ' + sim.photos.length + ' photos taken. Landing at home.';
   if (Math.hypot(tel.x, tel.z) > (fieldMode || sim.auto ? 500 : 45)) msg = '<b>Too far away.</b> You would lose sight of it. Bring it back or press R.';
+  msg = failsafeTask(tel, msg);
   $('task').innerHTML = msg;
 }
 
