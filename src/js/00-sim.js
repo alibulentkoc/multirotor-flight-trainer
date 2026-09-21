@@ -335,7 +335,9 @@ Sim.prototype.step = function(dt, s){
   var load = this.armed ? battLoad(Tact/mg) : 0, drain = 100*load/P.batterySeconds; // percent per second
   this.batt = Math.max(0, this.batt - drain*dt); this.amps = P.batt.hoverCurrent*load;
   this.drainAvg += (drain - this.drainAvg)*Math.min(1, dt/P.batt.tauDraw);
-  if (this.batt <= 0 && !this.onGround && this.auto !== 'land') this.command('land');
+  // Last resort. battCheck has normally started the emergency landing long before 0 percent. This only acts when
+  // battCfg.crit was set below the limits that battCfgError enforces, so an empty battery always lands the drone.
+  if (this.batt <= 0 && this.armed && !this.onGround && this.auto !== 'critland') this.startCritLand('critical');
 
   var wv = this.windVec(), vr = [this.v[0] - wv[0], this.v[1], this.v[2] - wv[2]];
   var sp = Math.hypot(vr[0], vr[1], vr[2]), kd = P.kd1 + P.kd2*sp;

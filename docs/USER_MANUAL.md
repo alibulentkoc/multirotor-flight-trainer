@@ -215,7 +215,7 @@ Percent is what the drone acts on. The voltage readings follow from it:
 
 Each level announces itself once. The battery bar in the 3D view and the Battery line in the instruments show the state as a word as well as a color.
 
-**The emergency landing.** The drone controls the descent: about 2 m/s down to 3 m, then the normal landing rate. The throttle stick does nothing. The right stick still moves the drone, as in position hold, and yaw still works. Use them to pick a clear spot. With obstacle avoidance on, the drone will not descend onto an obstacle, so fly it clear. Only a disarm gets past the emergency landing, and in the air that is a crash. If you take off again below the critical level, it lands again.
+**The emergency landing.** The drone controls the descent: about 2 m/s down to 3 m, then the normal landing rate. The throttle stick does nothing. The right stick still moves the drone, as in position hold, and yaw still works. Use them to pick a clear spot. With obstacle avoidance on, the drone will not descend onto an obstacle, so fly it clear. Only a disarm gets past the emergency landing, and in the air that is a crash. If you take off again below the critical level, it lands again. A drill that is under way when the emergency landing starts ends as not finished. Press R for a full battery and fly it again.
 
 **The return estimate.** The trainer keeps estimating how much battery the trip home would take from where the drone is now: the climb to the RTH altitude, the cruise home against the present wind at that height, and the descent. Two things use it:
 

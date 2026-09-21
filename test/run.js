@@ -71,6 +71,7 @@ test('critical battery: emergency landing cannot be cancelled, horizontal stick 
   assert(s.pos[0] - x0 > 4, 'moved east ' + (s.pos[0] - x0)); assert(Math.abs(s.telemetry().heading_deg - h0) > 20, 'yaw'); assert(s.v[1] < -1, 'still descending with full up throttle: ' + s.v[1]);
   untilLanded(s, 60); assert(s.onGround && !s.armed && !s.crashed); assert(s.lastTouchdown.speed < 1); assert(Math.hypot(s.pos[0], s.pos[2]) > 20, 'landed in place, not at home'); });
 test('critical battery: taking off again below the critical level lands again', function(){ var s = new Sim(), was = false, top = 0; s.batt = 8; s.command('takeoff'); untilLanded(s, 20, function(){ was = was || s.auto === 'critland'; top = Math.max(top, s.pos[1]); return Z; }); assert(was, 'emergency landing engaged'); assert(top < 1, 'top ' + top); assert(s.onGround && !s.armed && !s.crashed); });
+test('an empty battery lands the drone even when the critical level is set below its limits', function(){ var s = flyingAt(10, 8, -10); s.battCfg = { warn: 0, low: 0, crit: 0, autoRth: false }; s.batt = 0.01; run(s, 1); assert.strictEqual(s.batt, 0); assert.strictEqual(s.auto, 'critland'); s.command('land'); assert.strictEqual(s.auto, 'critland'); untilLanded(s, 40); assert(s.onGround && !s.armed && !s.crashed); });
 test('voltage falls with percent and sags with thrust', function(){
   assert(Math.abs(S.battOcv(100) - 4.2) < 1e-9 && Math.abs(S.battOcv(0) - 3.3) < 1e-9 && Math.abs(S.battOcv(50) - 3.7) < 0.05); for (var p = 1; p <= 100; p++) assert(S.battOcv(p) > S.battOcv(p - 1), 'curve not rising at ' + p);
   var s = new Sim(), rest = s.telemetry(); assert(Math.abs(rest.voltage - 16.8) < 1e-9 && Math.abs(rest.cell_voltage - 4.2) < 1e-9 && rest.current_a === 0 && rest.minutes_left === null);
@@ -99,6 +100,14 @@ test('a planned flight returns and lands under the battery thresholds', function
 test('a planned flight with automatic RTH off flies on and lands in place at the critical level', function(){ S.PARAMS.batterySeconds = 100; var s = new Sim(); s.battCfg.autoRth = false;
   s.startMission([{ x: 0, y: 20, z: 0 }, { x: 0, y: 20, z: -600 }, { x: 0, y: 20, z: 0 }], 6, 8); var was = null; untilLanded(s, 300, function(){ if (s.auto) was = s.auto; return Z; }); S.PARAMS.batterySeconds = 600;
   assert.strictEqual(was, 'critland'); assert(s.onGround && !s.crashed); assert(Math.hypot(s.pos[0], s.pos[2]) > 50); });
+
+// ---- drills (pure function sliced from 30-drills.js) ----
+console.log('drills');
+var D = {}; vm.createContext(D); vm.runInContext(slice(src('30-drills.js'), 'function drillAbort', 'function drillStep'), D);
+test('an emergency landing ends a drill that is ready or running, so it cannot hang', function(){
+  ['hover', 'nosein', 'square', 'land'].forEach(function(id){ ['ready', 'run'].forEach(function(ph){ assert(D.drillAbort('batt_crit', id, ph).length > 20, id + ' ' + ph); assert(D.drillAbort('batt_unreachable', id, ph).length > 20); }); });
+  assert.strictEqual(D.drillAbort('batt_crit', 'free', 'run'), ''); assert.strictEqual(D.drillAbort('batt_crit', 'hover', 'done'), ''); assert.strictEqual(D.drillAbort('batt_crit', 'hover', 'failed'), '');
+  ['batt_warn', 'batt_low', 'batt_margin', 'rth', 'rth_cancel', 'touchdown', 'liftoff'].forEach(function(ev){ assert.strictEqual(D.drillAbort(ev, 'hover', 'run'), '', ev + ' must not end a drill'); }); });
 
 // ---- controller actions (pure functions, the whole of 41-actions.js) ----
 console.log('controller actions');

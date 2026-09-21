@@ -47,6 +47,15 @@ function finish(score, detail){
   showNotice('pass', DRILLS[drill.id].name + ': ' + score + ' / 100', detail + ' Press R to fly it again.');
   renderLog(); renderDrillButtons();
 }
+// Pure. An emergency landing cannot be cancelled, so a drill that is ready or running when one starts can never be
+// finished. Returns the reason to show, or '' when the event does not end the drill. A battery RTH does not end it,
+// because the pilot may cancel that and fly on.
+function drillAbort(ev, id, phase){
+  if (id === 'free' || (phase !== 'ready' && phase !== 'run')) return '';
+  if (ev === 'batt_crit') return 'The battery reached the critical level and the drone is landing by itself.';
+  if (ev === 'batt_unreachable') return 'The battery is low and home is out of reach, so the drone is landing by itself.';
+  return '';
+}
 function drillStep(dt){
   if (drill.id === 'free' || drill.phase === 'done' || drill.phase === 'failed') return;
   var p = sim.pos; if (drill.phase === 'ready'){ if (p[1] > 0.3){ drill.phase = 'run'; } else return; }
@@ -80,6 +89,8 @@ sim.onEvent = function(ev){
     if (drill.id !== 'free' && drill.phase !== 'done') drill.phase = 'failed';
     showNotice('fail', 'Crashed', sim.crashed + ' Press R to reset.');
   }
+  var why = drillAbort(ev, drill.id, drill.phase);
+  if (why){ drill.phase = 'failed'; showNotice('fail', DRILLS[drill.id].name + ': not finished', why + ' Press R for a full battery and fly it again.'); }
   if (ev === 'touchdown' && drill.id === 'land' && drill.phase === 'run' && drill.maxAlt > 0.8){
     var td = sim.lastTouchdown, dist = Math.hypot(td.x - LAND_T[0], td.z - LAND_T[1]);
     finish(dist > 1.5 ? 0 : 100 - 70*dist - 20*Math.max(0, td.speed - 0.5), 'Landed ' + dist.toFixed(2) + ' m from center at ' + td.speed.toFixed(1) + ' m/s.');

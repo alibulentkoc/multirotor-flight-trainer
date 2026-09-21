@@ -32,7 +32,7 @@ The split is mechanical. Fragments in `src/js` are concatenated in file-name ord
 | 22-field-objects.js | Obstacles, colliders, pilot, trees, windsock, drone model |
 | 30-drills.js | Drill definitions, scoring, results log |
 | 40-input.js | Keyboard, touch sticks, gamepad mapping, the Assign table for controller actions |
-| 41-actions.js | Pure logic for switches and buttons assigned to actions (ctionStep, detectSource). Headless-testable |
+| 41-actions.js | Pure logic for switches and buttons assigned to actions (`actionStep`, `detectSource`). Headless-testable |
 | 50-ui.js | Side panel, instruments, task messages |
 | 51-failsafe.js | RTH and battery settings, battery bar, failsafe messages, beep |
 | 60-environment.js | Sun, cloud, wind controls |
@@ -66,6 +66,8 @@ All of this is in `00-sim.js`, with no DOM code. Constants are in `PARAMS.rth` a
 - `battCheck()` runs at the top of every step. Warning and low latch once per flight (`battLatch`, cleared by `reset()`), so a pilot who cancels the automatic RTH is not overruled. Critical is a condition, not a latch: whenever the drone is airborne below it, it lands.
 - At the low level `rthEstimate` decides between RTH and landing in place. The estimate covers climb, cruise against the mean wind at the cruise height (with the ground speed reduced when the tilt limit cannot hold `rth.speed`, and `Infinity` when there is no headway), descent, and landing. It is refreshed every `batt.estimateEvery` seconds for the margin warning and telemetry. A test compares it with a flown return.
 - Planned flights have no battery rule of their own any more. `battCheck` hands a mission over to `'rth'` or `'critland'` exactly as in manual flight. With automatic RTH off, a plan flies on to the critical level. The planner's battery warning uses `100 - battCfg.low` percent.
+- At 0 percent, `step()` starts the emergency landing itself if it is not already running. That only matters when `battCfg.crit` was set outside the limits of `battCfgError`. It replaces the old `command('land')` at 0 percent, which the `critland` command lock had turned into dead code.
+- Drills: `drillAbort` in `30-drills.js` (pure, tested through a marker slice) ends a drill that is ready or running when an emergency landing starts, because that landing cannot be cancelled and the drill could otherwise never finish. A battery RTH does not end a drill, since the pilot may cancel it.
 - Events added to `onEvent`: `rth`, `rth_cancel`, `batt_warn`, `batt_low`, `batt_crit`, `batt_margin`, `batt_unreachable`.
 - UI side: `51-failsafe.js` holds the settings (validated with `battCfgError`, stored under `uavtrainer.failsafe.v1`), the battery bar, the task box messages, and the optional beep. The bar always carries the state as a word. The beep starts off on every load, because a browser only allows sound after a click.
 
