@@ -12,6 +12,7 @@
 - Changed: at 0 percent nothing new happens, because the critical level has already landed the drone.
 - Optional beep at each battery level (one, two, three beeps). Off by default, and off again on every page load.
 - Controller setup: an "Assign" flow puts switches and buttons on actions: RTH, arm or disarm, land, change camera, a 3-position flight mode switch, and three separate flight mode buttons. Click Assign, then flip the switch or press the button. Each row has a type (Switch or Button), a live lamp, and Clear. A switch starts RTH when it goes on and cancels it when it goes off. A button toggles. Everything fires on changes only, so a switch left on does not restart RTH after a stick cancel. Assignments are saved with the stick mapping.
+- The tree on the practice field is taller: 10.2 m, up from 5.8 m. It is now the tallest thing on the field, so an RTH altitude set too low flies into it reliably (Lab 31). The crown keeps its 2.2 m base height and 1.7 m radius, so flying under it (Lab 8) and around it (Labs 13, 24, and 30) is unchanged.
 - The time selector in the flight plan window gives the keyboard back after a change, so P works at once.
 - The action buttons are now in two rows: Arm, Take off, Reset, then Land and Return to home.
 - Manual: new section 8, "Return to home and battery failsafes". Later sections move up by one. Two new labs in a new group "Extra. Failsafes": Lab 31, "Return to home, and why its altitude matters", and Lab 32, "Battery warnings and the emergency landing".

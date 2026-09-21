@@ -966,12 +966,12 @@ What the drone does by itself when something runs out: return to home, the batte
 3. Press **T**. Climb to about 3 m. Fly past the tree and stop about 5 m behind it, so the tree stands between the drone and the orange ring.
 4. Look at the small "Front camera" picture. Turn with **A** or **D** until the tree is in the middle of it, with the orange ring behind the tree.
 5. Check the Sensors section: "Obstacle avoidance" is ticked. Remember that.
-6. Press **H**. The drone climbs to 5 m and flies straight for home. The tree is about 6 m tall.
-7. It hits the tree, and a notice says why. If it slips past the thin tip instead, look how close it came, press **R**, and line it up again.
+6. Press **H**. The drone climbs to 5 m and flies straight for home. The tree is about 10 m tall.
+7. It hits the tree, and a notice says why. If it misses, the tree was not between the drone and the ring: press **R**, and line it up again.
 
 **Do, part 3: fix it**
 1. Press **R**. Measure the tree: take off, fly next to its top, and read "Altitude AGL".
-2. Choose an RTH altitude that clears the tree with room to spare. 10 m is a good choice here. Type it in, press **Enter**, and click once on the picture of the field.
+2. Choose an RTH altitude that clears the tree with room to spare. 15 m is a good choice here. Type it in, press **Enter**, and click once on the picture of the field.
 3. Fly behind the tree again, line it up again, and press **H**.
 4. The drone climbs to your new altitude, passes over the tree, and lands at home.
 

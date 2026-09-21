@@ -925,8 +925,11 @@ var roof = obst(new THREE.ConeGeometry(3.9, 1.6, 4), 0x59636a, -11, 4.0, -6); ro
 obst(new THREE.BoxGeometry(4, 3, 0.3), 0xdfe4e6, -3.6, 1.5, -13);
 obst(new THREE.BoxGeometry(4, 3, 0.3), 0xdfe4e6, 3.6, 1.5, -13);
 obst(new THREE.BoxGeometry(0.35, 0.5, 0.32), 0xd9500a, -1.75, 2.6, -13); obst(new THREE.BoxGeometry(0.35, 0.5, 0.32), 0xd9500a, 1.75, 2.6, -13);
-obst(new THREE.CylinderGeometry(0.22, 0.3, 2.4, 8), 0x5b4632, -6, 1.2, -11);
-obst(new THREE.ConeGeometry(1.7, 3.6, 9), 0x3f6a3a, -6, 4.0, -11);
+// The tree is the tallest thing on the practice field (10.2 m), so a low RTH altitude flies into it (Lab 31).
+// The crown keeps its 2.2 m base height and 1.7 m radius, so flying under it and around it is unchanged.
+var TREE = { x: -6, z: -11, trunkH: 2.4, crownBase: 2.2, crownR: 1.7, crownH: 8.0 };
+obst(new THREE.CylinderGeometry(0.22, 0.3, TREE.trunkH, 8), 0x5b4632, TREE.x, TREE.trunkH/2, TREE.z);
+obst(new THREE.ConeGeometry(TREE.crownR, TREE.crownH, 9), 0x3f6a3a, TREE.x, TREE.crownBase + TREE.crownH/2, TREE.z);
 scene.updateMatrixWorld(true);
 var colliders = obstacles.map(function(o){
   var b = new THREE.Box3().setFromObject(o).expandByScalar(0.28);
