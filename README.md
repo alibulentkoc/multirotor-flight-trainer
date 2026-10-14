@@ -84,4 +84,4 @@ See `LICENSE`. Third-party components keep their own licenses, listed in `THIRD_
 
 ## Acknowledgment
 
-Developed with assistance from Claude (Anthropic).
+Developed with assistance.
