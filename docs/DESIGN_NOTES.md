@@ -25,7 +25,7 @@ The split is mechanical. Fragments in `src/js` are concatenated in file-name ord
 
 | Fragment | Contents |
 |---|---|
-| 00-sim.js | Flight model, controllers, missions, return to home, battery model and failsafes, telemetry. Global scope, headless-testable |
+| 00-sim.js | Flight model, controllers, missions, return to home, battery model and failsafes, spray and drift model, telemetry. Global scope, headless-testable |
 | 10-app-start.js | Opens the app scope, storage helper |
 | 20-scene.js | Renderer, camera, lights |
 | 21-forage.js | Forage texture, clover truth mask, fescue tufts |
@@ -48,11 +48,12 @@ The split is mechanical. Fragments in `src/js` are concatenated in file-name ord
 
 The UI talks to the aircraft only through this surface. A future hardware link must implement the same one.
 
-- `command(name)`: arm, disarm, takeoff, land, emergency, rth, cancel_rth
+- `command(name)`: arm, disarm, takeoff, land, emergency, rth, cancel_rth, sprayOn, sprayOff, sprayToggle, refill
 - `step(dt, sticks)`: sticks are thr, yaw, pitch, roll in -1 to 1
 - `startMission(wps, speed, trig)`, `stopMission()`
-- `telemetry()`: pitch, roll, heading_deg, altitude_m, vz, ground_speed, x, z, battery, armed, on_ground, motors, voltage, cell_voltage, current_a, minutes_left, battery_state, rth_needed_pct, auto, auto_reason, rth_phase
-- Inputs set by the app: `mode`, `wind`, `windDir`, `avoid` (range readings), `landAssist`, `thrCentered`, `rthAlt`, `battCfg` (`warn`, `low`, `crit`, `autoRth`)
+- `telemetry()`: pitch, roll, heading_deg, altitude_m, vz, ground_speed, x, z, battery, armed, on_ground, motors, voltage, cell_voltage, current_a, minutes_left, battery_state, rth_needed_pct, auto, auto_reason, rth_phase, spraying, tank_l, mass_kg, sprayed_l, sprayed_ai_l, deposited_l, airborne_l, lost_l, parcels
+- Inputs set by the app: `mode`, `wind`, `windDir`, `avoid` (range readings), `landAssist`, `thrCentered`, `rthAlt`, `battCfg` (`warn`, `low`, `crit`, `autoRth`), `sprayCfg` (`tankL`, `fillL`, `flowLmin`, `cls`, `mount`), `airTempC`, `rhPct`, `stability`
+- Read-only spray views: `sprayParcels()` (airborne parcels as `[x, y, z, d]`), `sprayDeposit()` (`{ cell, half, data, lost }`), `sprayStats(poly, sensitivePoly)`
 
 ## Return to home and battery failsafes
 
@@ -107,6 +108,31 @@ One pure function in the tested range of `70-planner.js` decides which field is 
 - "Clear" restores the practice field for an image-less plan: the pure `clearDropsGeo({ hasField, points })` says when the georeference goes (no image, and no corner or waypoint left in either mode). "Undo point" never drops it.
 - A test scans `src/js` and fails if `fieldMode` is assigned anywhere else, or if the image-or-georeference rule appears outside `userFieldActive`.
 
+## Spray and drift (physics only)
+
+All of this is in `00-sim.js`, with no DOM or three.js code. Constants are in `PARAMS.spray`. The model follows the factors named in the UAPASTF best-practice guidance (Portillo et al., Drones 2025, 9, 388): droplet size, release height, flight speed, rotor downwash, nozzle position, wind, temperature and humidity, and inversions. With the default config the tank is 0 L and spraying does nothing. A step-by-step comparison against the previous `00-sim.js` (a windy mission with a stick takeover and every battery event) is bit-for-bit identical.
+
+- Pure functions: `dropTerminal(d)` (settling speed, Schiller-Naumann drag solved by bisection, not Stokes), `downwashSpeed(T)` (hover momentum theory over 4 rotor discs), `wetBulbDepression(T, RH)` (Stull 2011), `sprayRate(flow, speed, swath)` (L/ha), `sprayClassBins(name)`, `effectiveSwath(profile, cvMax)`, `sprayTankMax()`, `sprayCfgError(cfg)`, and `sprayStats(dep, poly, sensitivePoly)`.
+- Parcels. While spraying is on, the aircraft is armed and airborne, and the tank holds liquid, the tank drains at the flow rate. The volume goes into parcels, one per nozzle and size bin, every `binMul.length/emitRate` seconds. A parcel starts at its nozzle (rotated by the attitude) and carries a diameter, a liquid volume, and an active ingredient volume. Active ingredient is the non-volatile share of the liquid (`nonVol`).
+- Parcels have no inertia. Velocity = `windVec` at the parcel height (gusts included) + downwash + settling + a seeded Ornstein-Uhlenbeck random walk (sigma `turbH`, `turbV`, time scale `turbT`). They update at `spray.dt` (50 Hz), not at the 250 Hz physics rate, and keep falling after a landing or crash.
+- Downwash: `downwashSpeed` of the actual thrust, straight down. Full strength inside the rotor footprint (radius `d*sqrt(2) + rotorR`) down to the nozzles, decaying with depth (`dwDecay`) and sideways outside the footprint (`dwSide`). The column tilts back along the airspeed with the wake skew `tan(chi) = airspeed/v_i`, so fast flight leaves less downwash under the nozzles. Rotor nozzles sit inside the footprint and boom nozzles outside it, which is how the mount matters.
+- Evaporation: d^2 law at `evapK` times the wet-bulb depression, down to the non-volatile residue `d0*nonVol^(1/3)`, never to zero. The settling speed is recomputed after each 1 % change in diameter.
+- Stability: `'inversion'` multiplies the vertical turbulence by `invTurbV` and makes the wind direction meander (`invMeander`, `invPeriod`). The meander is in `windVec` itself, so the aircraft feels it too. Neutral air leaves `windVec` unchanged.
+- Deposit: when a parcel crosses y = 0 its active ingredient goes into the grid cell at the crossing point (`cell`, `half` around home). Outside the grid, or airborne longer than `maxAge` (fine aerosol), it counts as lost. Active ingredient is conserved: `sprayed_ai_l = deposited_l + airborne_l + lost_l` to rounding.
+- Parcel cap: when the next emission would pass `maxParcels`, it goes out as one parcel per bin at the mean nozzle position. At the cap it merges into the youngest airborne parcel of each bin. Volume is never dropped.
+- Mass: total mass = `PARAMS.m` + tank liquid. Controllers and the force equation use it. Drag is a force (`kd` is per empty mass). The motor limit stays at the empty value `m*g*twr/4`, and `telemetry().motors` is normalized to it. Battery load is thrust over EMPTY weight, so a full tank drains faster without a separate rule. `rthEstimate` takes the mass ratio as a 7th argument and assumes the tank stays as it is. `sprayTankMax()` keeps full-tank thrust to weight >= `twrMin` (0.88 L for this airframe).
+- Interface: see The sim interface. `refill` works only landed and disarmed. `reset()` clears parcels and the deposit and refills to `sprayCfg.fillL` (0 when `sprayCfgError` finds a problem). Spray commands pass the `critland` lock because they do not touch the flight. Spraying while hovering is allowed, as a teaching point.
+- Performance: the parcel loop uses local aliases instead of global lookups, which are slow inside the test `vm` context. 60 s at the 4000-parcel cap takes about 8 s in Node under the tests.
+
+Assumptions and what it leaves out:
+
+- Canopy capture is out of scope. A parcel deposits where it reaches the ground. No ground outwash or vortex ring, no droplet inertia or nozzle exit velocity, no hover-to-forward-flight change in induced speed (only the wake skew), no wake turbulence, flat ground.
+- The turbulence sigmas are fixed, not scaled with wind speed or height.
+- Known gap: the model does not reproduce "fine droplets stay aloft under an inversion". With an absorbing ground, a settling parcel's mean time to land is about h/vt whatever the turbulence. Cutting the vertical turbulence therefore narrows the spread, and neutral air keeps the longer far tail. Measured (fine spray, 3 m hover, 0.8 m/s, 10 s): parcels still airborne at +5, +10, +15 s were 17, 10, 6 in neutral air and 6, 1, 0 under inversion; mean deposit distance 1.17 m neutral, 1.08 m inversion. What the guidance warns about (a concentrated, suspended cloud moving far in calm, decoupled air) needs physics this branch does not have. The inversion test therefore checks only the meander and the sideways turn of the plume. Fix this before spray-labs teaches inversions.
+- The effective swath comes from the 0.5 m deposit grid, so it is quantized to 0.5 m.
+
+Planned next branches: spray-planner (swath, rate, and line spacing in the planner, boundary shutoff), spray-render (parcels and the deposit map from `sprayParcels` and `sprayDeposit`), spray-labs (UI controls, labs, scoring with `sprayStats`, and the manual).
+
 ## Next structural step
 
 Turn the shared-scope fragments into real modules with explicit imports, so features can be added without order coupling. Do this one fragment at a time, with the tests green at each step. Pure logic (plan computation, parsers, scoring) should move out of DOM code first so it can be tested directly.
@@ -116,7 +142,7 @@ Turn the shared-scope fragments into real modules with explicit imports, so feat
 1. Movable home point (done, see Movable home). Still open: scenario files and results export (instructor control).
 2. Emergency procedures and additional drills.
 3. Image capture and quick mosaic. Simulated red and NIR camera with NDVI. Biomass and clover truth layers.
-4. Spray drone mode: tank, swath, rate, boundary shutoff, drift, coverage map.
+4. Spray drone mode: tank, swath, rate, boundary shutoff, drift, coverage map. Physics done (see Spray and drift). Next: spray-planner, spray-render, spray-labs.
 5. Built-in lessons, preflight checklist, quiz bank.
 6. Terrain, airframe presets, replay. Optional: phone controller, hardware link.
 

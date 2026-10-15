@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased: spray and drift model (physics only)
+
+Nothing is user-visible yet. Rendering, planner, and UI controls come in later branches.
+
+- Headless spray and drift model in `00-sim.js`, constants in `PARAMS.spray`. It follows the factors in the UAPASTF best-practice guidance (Portillo et al., Drones 2025, 9, 388): droplet size, release height, flight speed, rotor downwash, nozzle position, wind, temperature and humidity, and inversions.
+- Droplet parcels move with the wind (gusts included), the rotor downwash (tilted back in forward flight), their settling speed, and a seeded turbulent random walk. They evaporate by the d^2 law down to their non-volatile residue, and deposit active ingredient on a 0.5 m grid around home. Four droplet classes (fine, medium, coarse, very coarse), rotor or boom nozzles, neutral or inversion air.
+- Tank and mass: the liquid adds to the mass, so a full tank needs more hover thrust and drains the battery faster, while the motor limit stays fixed. The largest tank keeps full-tank thrust to weight at 1.5 (0.88 L for this airframe). The return-to-home estimate accounts for the current mass.
+- Sim interface: `sprayCfg`, `airTempC`, `rhPct`, `stability`; commands `sprayOn`, `sprayOff`, `sprayToggle`, `refill`; `sprayParcels()`, `sprayDeposit()`, `sprayStats()`; new telemetry fields `spraying`, `tank_l`, `mass_kg`, `sprayed_l`, `sprayed_ai_l`, `deposited_l`, `airborne_l`, `lost_l`, `parcels`. Pure functions `dropTerminal`, `downwashSpeed`, `wetBulbDepression`, `sprayRate`, `sprayClassBins`, `effectiveSwath`, `sprayTankMax`, `sprayCfgError`, `sprayStats`.
+- The default tank is 0 L, so existing behavior is unchanged.
+- Known gap: an inversion does not yet keep fine droplets aloft in this model. See docs/DESIGN_NOTES.md.
+- 21 tests added.
+
 ## Unreleased
 
 - Return to home (RTH). New "Return to home" button next to Land, the H key, and `sim.command('rth')`. Below the RTH altitude the drone climbs to it first, above it the drone keeps its height. It then flies straight home at 6 m/s, descends, lands, and disarms. The status box reads "Returning home". Moving the right stick past one third, pressing H again, or `sim.command('cancel_rth')` cancels it and returns control in the selected flight mode. New setting "RTH altitude", 5 to 120 m, default 30.

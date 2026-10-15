@@ -101,6 +101,118 @@ test('a planned flight with automatic RTH off flies on and lands in place at the
   s.startMission([{ x: 0, y: 20, z: 0 }, { x: 0, y: 20, z: -600 }, { x: 0, y: 20, z: 0 }], 6, 8); var was = null; untilLanded(s, 300, function(){ if (s.auto) was = s.auto; return Z; }); S.PARAMS.batterySeconds = 600;
   assert.strictEqual(was, 'critland'); assert(s.onGround && !s.crashed); assert(Math.hypot(s.pos[0], s.pos[2]) > 50); });
 
+// ---- spray ----
+console.log('spray');
+var SPR = S.PARAMS.spray, TMAX = S.sprayTankMax();
+// A sim with a full tank (unless o.fill says otherwise) hovering at height o.h (default 3 m) over home.
+function sprayer(o){ o = o || {}; var s = new Sim();
+  s.sprayCfg = { tankL: TMAX, fillL: o.fill === undefined ? TMAX : o.fill, flowLmin: o.flow || 0.5, cls: o.cls || 'medium', mount: o.mount || 'rotor' };
+  s.wind = o.wind || 0; s.windDir = o.dir === undefined ? 270 : o.dir; if (o.temp !== undefined) s.airTempC = o.temp; if (o.rh !== undefined) s.rhPct = o.rh; if (o.stab) s.stability = o.stab;
+  s.reset(); s.command('takeoff'); run(s, 5); s.pos = [0, o.h || 3, 0]; s.posSp = null; s.altSp = null; run(s, 3); return s; }
+// Run until every parcel has landed or been lost.
+function settle(s, T){ var t = 0; while (t < (T || 400) && (s.parcels.length || s.sprayAcc > 0)){ s.step(1/250, Z); t += 1/250; } return t; }
+// Spray in a hover for T seconds, land, and wait for the parcels.
+function hoverSpray(o, T){ var s = sprayer(o); s.command('sprayOn'); run(s, T || 6); s.command('sprayOff'); s.command('land'); settle(s); return s; }
+// Deposit-weighted centroid, and mean distance from the point (0, 0) under the drone.
+function depStats(s){ var d = s.sprayDeposit(), n = Math.round(2*d.half/d.cell), sx = 0, sz = 0, sa = 0, sr = 0;
+  for (var iz = 0; iz < n; iz++) for (var ix = 0; ix < n; ix++){ var a = d.data[iz*n + ix]; if (!a) continue; var x = -d.half + (ix + 0.5)*d.cell, z = -d.half + (iz + 0.5)*d.cell; sx += a*x; sz += a*z; sa += a; sr += a*Math.hypot(x, z); }
+  return { x: sx/sa, z: sz/sa, r: sr/sa, a: sa, lost: d.lost }; }
+var sprayLog = []; // measured values, printed at the end of the section
+test('dropTerminal: 100 um 0.22 to 0.32 m/s, 400 um 1.4 to 1.8 m/s, rising with diameter', function(){
+  var v100 = S.dropTerminal(100e-6), v400 = S.dropTerminal(400e-6); sprayLog.push('terminal speed: 100 um ' + v100.toFixed(3) + ' m/s, 400 um ' + v400.toFixed(3) + ' m/s');
+  assert(v100 > 0.22 && v100 < 0.32, '100 um ' + v100); assert(v400 > 1.4 && v400 < 1.8, '400 um ' + v400);
+  for (var d = 10, prev = 0; d <= 1000; d += 10){ var v = S.dropTerminal(d*1e-6); assert(v > prev, 'not rising at ' + d + ' um'); prev = v; }
+  assert(S.dropTerminal(400e-6) < (1000 - 1.2)*9.81*16e-8/(18*1.81e-5)/2, 'well below Stokes at 400 um'); });
+test('sprayRate: 0.5 L/min at 3 m/s over a 2 m swath is about 13.9 L/ha', function(){ assert(Math.abs(S.sprayRate(0.5, 3, 2) - 13.89) < 0.01); });
+test('wet-bulb depression, downwash, and droplet bins', function(){
+  var a = S.wetBulbDepression(20, 50), b = S.wetBulbDepression(30, 30), c = S.wetBulbDepression(15, 80); assert(a > 5.5 && a < 7.5, '20 C 50 % ' + a); assert(b > c + 8, 'hot dry ' + b + ' cool humid ' + c); assert(S.wetBulbDepression(20, 100) < 0.3);
+  var vh = S.downwashSpeed(S.PARAMS.m*S.PARAMS.g); assert(vh > 3 && vh < 8, 'hover downwash ' + vh); assert(Math.abs(S.downwashSpeed(4*S.PARAMS.m*S.PARAMS.g) - 2*vh) < 1e-9);
+  var bins = S.sprayClassBins('medium'); assert.strictEqual(bins.length, 5); assert(Math.abs(bins[2].d - 250e-6) < 1e-12); assert(Math.abs(bins.reduce(function(t, x){ return t + x.frac; }, 0) - 1) < 1e-12); assert.strictEqual(S.sprayClassBins('mist').length, 0); });
+test('effectiveSwath: a flat 4 m profile gives 4.3 m at CV 30 %, a triangle gives at least half its base', function(){
+  var flat = []; for (var i = 0; i < 40; i++) flat.push(1); // gaps of g bins in 40 give CV = sqrt(g/40): 3 bins pass, 4 fail
+  assert(Math.abs(S.effectiveSwath({ dx: 0.1, v: flat }) - 4.3) < 1e-9, 'flat ' + S.effectiveSwath({ dx: 0.1, v: flat }));
+  assert(Math.abs(S.effectiveSwath({ dx: 0.1, v: flat }, 10) - 4.0) < 1e-9, 'flat at 10 %');
+  var tri = []; for (i = 0; i < 40; i++) tri.push(20 - Math.abs(i - 19.5)); var w = S.effectiveSwath({ dx: 0.1, v: tri }); assert(w >= 2.0 && w < 4, 'triangle ' + w); });
+test('default config: empty tank, spraying does nothing, mass is the airframe', function(){ var s = new Sim(), ev = []; s.onEvent = function(e){ ev.push(e); };
+  assert.strictEqual(s.tank, 0); assert.strictEqual(s.mass(), S.PARAMS.m); s.command('takeoff'); run(s, 5); s.command('sprayOn'); run(s, 3); var t = s.telemetry();
+  assert.strictEqual(t.spraying, false); assert.strictEqual(t.tank_l, 0); assert.strictEqual(t.mass_kg, S.PARAMS.m); assert.strictEqual(t.sprayed_l, 0); assert.strictEqual(t.parcels, 0); assert.strictEqual(t.deposited_l + t.airborne_l + t.lost_l, 0);
+  assert.strictEqual(s.sprayParcels().length, 0); assert.strictEqual(ev.indexOf('spray_empty'), -1); });
+test('conservation: active ingredient sprayed = deposited + airborne + lost', function(){ var s = sprayer({ cls: 'fine', wind: 3, h: 4 }); s.command('sprayOn'); run(s, 8);
+  var t = s.telemetry(); assert(t.airborne_l > 0 && t.parcels > 0); assert(Math.abs(t.sprayed_ai_l - (t.deposited_l + t.airborne_l + t.lost_l)) < 1e-9, 'in flight');
+  s.command('sprayOff'); s.command('land'); settle(s); t = s.telemetry(); assert.strictEqual(t.parcels, 0); assert(t.deposited_l > 0);
+  assert(Math.abs(t.sprayed_ai_l - (t.deposited_l + t.airborne_l + t.lost_l)) < 1e-9, 'after landing: ' + t.sprayed_ai_l + ' vs ' + (t.deposited_l + t.airborne_l + t.lost_l));
+  assert(Math.abs(t.sprayed_ai_l - t.sprayed_l*SPR.nonVol) < 1e-9, 'ai is the non-volatile share of the liquid'); });
+test('the tank empties at the flow rate and spraying stops at empty', function(){ var s = sprayer({ fill: 0.1, flow: 2 }), ev = []; s.onEvent = function(e){ ev.push(e); }; s.command('sprayOn'); run(s, 1.5);
+  assert(Math.abs(s.tank - (0.1 - 2/60*1.5)) < 0.002, 'tank ' + s.tank); assert(s.mass() < S.PARAMS.m + 0.1 && s.mass() > S.PARAMS.m); run(s, 2.5);
+  assert.strictEqual(s.tank, 0); assert.strictEqual(s.spraying, false); assert(Math.abs(s.sprayed - 0.1) < 1e-9); assert.strictEqual(s.mass(), S.PARAMS.m); assert.deepStrictEqual(ev.filter(function(e){ return e === 'spray_empty'; }), ['spray_empty']);
+  s.command('sprayOn'); assert.strictEqual(s.spraying, false, 'cannot start with an empty tank'); });
+test('refill works only landed and disarmed; reset refills to the fill level', function(){ var s = sprayer({ fill: 0.3 }); s.command('sprayOn'); run(s, 3); var left = s.tank; assert(left < 0.3);
+  s.command('refill'); assert.strictEqual(s.tank, left, 'no refill in the air'); s.command('sprayOff'); s.command('land'); untilLanded(s, 20); assert(s.onGround && !s.armed); s.command('refill'); assert.strictEqual(s.tank, 0.3);
+  settle(s); s.reset(); assert.strictEqual(s.tank, 0.3); assert.strictEqual(s.parcels.length, 0); assert.strictEqual(s.telemetry().deposited_l, 0); assert.strictEqual(s.sprayed, 0); });
+test('no wind, hover at 3 m: the deposit centroid is under the drone', function(){ var d = depStats(hoverSpray({})); sprayLog.push('no wind, 3 m hover: centroid (' + d.x.toFixed(2) + ', ' + d.z.toFixed(2) + ') m');
+  assert(Math.hypot(d.x, d.z) < 0.5, 'centroid ' + d.x + ', ' + d.z); });
+var drift = {}; // centroid x in a 3 m/s west wind, by case
+function drifted(key, o){ if (!drift[key]) drift[key] = depStats(hoverSpray(Object.assign({ wind: 3, dir: 270 }, o))); return drift[key]; }
+test('wind 3 m/s from the west moves the deposit east (+X)', function(){ var d = drifted('medium3', {}); assert(d.x > 0.3, 'centroid x ' + d.x); assert(Math.abs(d.z) < d.x, 'mostly east'); });
+test('3 m/s wind: fine drifts farther than very coarse, a 5 m release farther than a 2 m release', function(){
+  var f = drifted('fine3', { cls: 'fine' }), vc = drifted('vc3', { cls: 'very coarse' }), h5 = drifted('h5', { h: 5 }), h2 = drifted('h2', { h: 2 });
+  sprayLog.push('3 m/s wind, 3 m: centroid x fine ' + f.x.toFixed(2) + ' m (lost ' + (100*f.lost/(f.a + f.lost)).toFixed(1) + ' %), medium ' + drifted('medium3', {}).x.toFixed(2) + ' m, very coarse ' + vc.x.toFixed(2) + ' m');
+  sprayLog.push('3 m/s wind, medium: centroid x from 2 m ' + h2.x.toFixed(2) + ' m, from 5 m ' + h5.x.toFixed(2) + ' m');
+  assert(f.x > vc.x + 0.2, 'fine ' + f.x + ' very coarse ' + vc.x); assert(h5.x > h2.x + 0.2, '5 m ' + h5.x + ' 2 m ' + h2.x); });
+test('hot and dry (30 C, 30 %) drifts farther downwind than cool and humid (15 C, 80 %), fine spray', function(){
+  var hot = drifted('hot', { cls: 'fine', temp: 30, rh: 30 }), cool = drifted('cool', { cls: 'fine', temp: 15, rh: 80 });
+  sprayLog.push('fine, 3 m/s wind: centroid x hot and dry ' + hot.x.toFixed(2) + ' m (lost ' + (100*hot.lost/(hot.a + hot.lost)).toFixed(1) + ' %), cool and humid ' + cool.x.toFixed(2) + ' m (lost ' + (100*cool.lost/(cool.a + cool.lost)).toFixed(1) + ' %)');
+  assert(hot.x > cool.x + 0.1, 'hot ' + hot.x + ' cool ' + cool.x); });
+// The model does not reproduce "fine droplets stay aloft" under an inversion (see DESIGN_NOTES, Spray and drift).
+// This test checks what it does model: the slow wind meander, and the sideways turn of the fine-spray plume.
+test('inversion: the wind direction meanders and turns the fine-spray plume sideways (0.8 m/s, 3 m)', function(){
+  var a = new Sim(), b = new Sim(); a.wind = b.wind = 4; a.windDir = b.windDir = 270; b.stability = 'inversion'; a.t = b.t = 15; // a quarter period: full amplitude
+  var wa = a.windVec(10), wb = b.windVec(10), turn = (Math.atan2(wb[2], wb[0]) - Math.atan2(wa[2], wa[0]))*180/Math.PI;
+  assert(Math.abs(turn - SPR.invMeander) < 0.5, 'turn ' + turn); assert(Math.abs(Math.hypot(wa[0], wa[2]) - Math.hypot(wb[0], wb[2])) < 1e-9, 'same speed');
+  var inv = depStats(hoverSpray({ cls: 'fine', wind: 0.8, stab: 'inversion' }, 10)), neu = depStats(hoverSpray({ cls: 'fine', wind: 0.8 }, 10));
+  sprayLog.push('fine, 0.8 m/s wind: mean distance from the target, inversion ' + inv.r.toFixed(2) + ' m, neutral ' + neu.r.toFixed(2) + ' m; centroid inversion (' + inv.x.toFixed(2) + ', ' + inv.z.toFixed(2) + '), neutral (' + neu.x.toFixed(2) + ', ' + neu.z.toFixed(2) + ')');
+  assert(inv.z - neu.z > 0.1, 'the meandered wind (from about 300 deg) moves the plume south: z ' + inv.z + ' vs ' + neu.z); assert(inv.x > 0 && neu.x > 0, 'both downwind'); });
+// Fly a 3 m pass north along x = 0 at the given speed, spraying from z = -20 to z = -60. Share of the deposit within 1 m of the line.
+function passShare(speed, wind){ var s = new Sim(); s.sprayCfg = { tankL: TMAX, fillL: TMAX, flowLmin: 0.5, cls: 'medium', mount: 'rotor' }; s.wind = wind; s.windDir = 270; s.reset();
+  s.startMission([{ x: 0, y: 3, z: 0 }, { x: 0, y: 3, z: -80 }], speed, 10);
+  untilLanded(s, 120, function(){ if (s.pos[2] < -20 && s.pos[2] > -60) s.command('sprayOn'); else s.command('sprayOff'); return Z; }); settle(s);
+  var d = s.sprayDeposit(), n = Math.round(2*d.half/d.cell), near = 0, all = 0;
+  for (var iz = 0; iz < n; iz++) for (var ix = 0; ix < n; ix++){ var a = d.data[iz*n + ix], x = -d.half + (ix + 0.5)*d.cell; all += a; if (Math.abs(x) < 1) near += a; }
+  return { share: near/(all + d.lost), s: s }; }
+test('7 m/s puts less of the deposit under the path than 2 m/s', function(){ var fast = passShare(7, 1).share, slow = passShare(2, 1).share;
+  sprayLog.push('3 m pass, 1 m/s crosswind: share within 1 m of the line at 2 m/s ' + (100*slow).toFixed(1) + ' %, at 7 m/s ' + (100*fast).toFixed(1) + ' %');
+  assert(fast < slow - 0.03, 'fast ' + fast + ' slow ' + slow); });
+test('effective swath of a 3 m pass at 3 m/s, no wind (printed)', function(){ var s = passShare(3, 0).s, d = s.sprayDeposit(), n = Math.round(2*d.half/d.cell), v = [];
+  var i0 = Math.floor((-55 + d.half)/d.cell), i1 = Math.floor((-25 + d.half)/d.cell), jc = n/2, jw = 16; // rows across the middle of the sprayed segment, columns |x| < 8 m
+  for (var j = jc - jw; j < jc + jw; j++){ var sum = 0; for (var iz = i0; iz < i1; iz++) sum += d.data[iz*n + j]; v.push(sum); }
+  var w = S.effectiveSwath({ dx: d.cell, v: v }); sprayLog.push('effective swath, 3 m pass at 3 m/s, medium, no wind: ' + w.toFixed(1) + ' m (CV <= 30 %)'); assert(w > 0.5 && w < 16, 'swath ' + w); });
+test('a full tank needs more hover thrust and drains the battery faster', function(){ var e = sprayer({ fill: 0 }), f = sprayer({}); var b0e = e.batt, b0f = f.batt; run(e, 20); run(f, 20);
+  var te = e.F.reduce(function(a, x){ return a + x; }, 0), tf = f.F.reduce(function(a, x){ return a + x; }, 0);
+  assert(Math.abs(te - S.PARAMS.m*S.PARAMS.g) < 0.3, 'empty hover thrust ' + te); assert(Math.abs(tf - f.mass()*S.PARAMS.g) < 0.3, 'full hover thrust ' + tf + ' for ' + f.mass() + ' kg');
+  assert(b0f - f.batt > 1.5*(b0e - e.batt), 'drain full ' + (b0f - f.batt) + ' empty ' + (b0e - e.batt)); assert(Math.abs(f.pos[1] - 3) < 0.2 && !f.crashed);
+  assert(S.rthEstimate(0, -100, 10, 30, 0, 0, f.mass()/S.PARAMS.m).pct > 1.5*S.rthEstimate(0, -100, 10, 30, 0, 0).pct, 'return estimate grows with mass'); });
+test('maximum motor thrust is the same with a full and an empty tank', function(){ var Fmax = S.PARAMS.m*S.PARAMS.g*S.PARAMS.twr/4;
+  var peak = function(fill){ var s = sprayer({ fill: fill }), hi = 0; s.mode = 'alt'; run(s, 0.6, function(){ s.v[1] = -3; hi = Math.max(hi, Math.max.apply(null, s.F)); return st({ thr: 1 }); }); return { hi: hi, mot: Math.max.apply(null, s.telemetry().motors) }; };
+  var e = peak(0), f = peak(TMAX); assert(Math.abs(e.hi - Fmax) < 1e-3*Fmax && Math.abs(f.hi - Fmax) < 1e-3*Fmax, 'peaks ' + e.hi + ' ' + f.hi + ' of ' + Fmax);
+  assert(f.mot <= 1 + 1e-9 && Math.abs(e.mot - f.mot) < 1e-3, 'normalized motors ' + e.mot + ' ' + f.mot); });
+test('the same seed gives identical deposits', function(){ var a = hoverSpray({ cls: 'fine', wind: 2, h: 4 }, 4), b = hoverSpray({ cls: 'fine', wind: 2, h: 4 }, 4), da = a.sprayDeposit().data, db = b.sprayDeposit().data;
+  assert.strictEqual(da.length, db.length); for (var i = 0; i < da.length; i++) if (da[i] !== db[i]) assert.fail('cell ' + i + ' differs'); assert.strictEqual(a.lost, b.lost); assert(a.deposited > 0); });
+test('sprayCfgError: capacity, fill, flow, class, and mount', function(){ var ok = { tankL: 0.5, fillL: 0.5, flowLmin: 0.5, cls: 'medium', mount: 'boom' }, w = function(o){ return S.sprayCfgError(Object.assign({}, ok, o)); };
+  assert.strictEqual(S.sprayCfgError(ok), ''); assert.strictEqual(w({ tankL: 0, fillL: 0 }), ''); assert.strictEqual(w({ tankL: TMAX, fillL: TMAX }), '');
+  assert(Math.abs((S.PARAMS.m + TMAX*SPR.rhoLiq/1000)*SPR.twrMin - S.PARAMS.m*S.PARAMS.twr) < 1e-9, 'the full tank leaves thrust to weight at the limit');
+  assert(w({ tankL: TMAX + 0.01 })); assert(w({ fillL: 0.6 })); assert(w({ fillL: -0.1 })); assert(w({ flowLmin: 0.05 })); assert(w({ flowLmin: 2.5 })); assert(w({ flowLmin: '1' })); assert(w({ mount: 'wing' })); assert(w({ cls: 'mist' })); assert(S.sprayCfgError(null));
+  var s = new Sim(); s.sprayCfg = Object.assign({}, ok, { mount: 'wing' }); s.reset(); assert.strictEqual(s.tank, 0, 'an invalid config fills nothing'); });
+test('boom nozzles release outside the rotor footprint and sprayStats splits the deposit', function(){ var s = sprayer({ mount: 'boom' }); s.command('sprayOn'); run(s, 0.3); var xs = s.sprayParcels().map(function(p){ return Math.abs(p[0]); });
+  assert(xs.length && Math.min.apply(null, xs) > 0.4, 'boom parcels start out at the boom ends'); s.command('sprayOff'); s.command('land'); settle(s);
+  var r = hoverSpray({}), box = function(c, h){ return [[c[0] - h, c[1] - h], [c[0] + h, c[1] - h], [c[0] + h, c[1] + h], [c[0] - h, c[1] + h]]; }, st0 = r.sprayStats(box([0, 0], 3), box([20, 0], 3)), t = r.telemetry();
+  assert(Math.abs(st0.inside_l + st0.outside_l + st0.lost_l - t.deposited_l - t.lost_l) < 1e-12); assert(st0.inside_l > 0.9*t.deposited_l && st0.offtarget_pct < 10, 'off target ' + st0.offtarget_pct);
+  assert.strictEqual(st0.sensitive_l, 0); assert(st0.peak_lha > st0.mean_lha && st0.cv_pct > 0); });
+test('performance: 60 s of spraying at the parcel cap (printed, never fails)', function(){ var rate = SPR.emitRate; SPR.emitRate = 400; var s = sprayer({ cls: 'fine', wind: 3, h: 5 }), hi = 0, t0 = Date.now();
+  try { s.command('sprayOn'); run(s, 60, function(){ hi = Math.max(hi, s.parcels.length); return Z; }); } finally { SPR.emitRate = rate; }
+  sprayLog.push('performance: 60 s at up to ' + hi + ' parcels (cap ' + SPR.maxParcels + ') took ' + (Date.now() - t0) + ' ms'); assert(hi <= SPR.maxParcels); });
+sprayLog.push('largest tank for this airframe: ' + TMAX.toFixed(3) + ' L');
+sprayLog.forEach(function(l){ console.log('        ' + l); });
+
 // ---- drills (pure function sliced from 30-drills.js) ----
 console.log('drills');
 var D = {}; vm.createContext(D); vm.runInContext(slice(src('30-drills.js'), 'function drillAbort', 'function drillStep'), D);
