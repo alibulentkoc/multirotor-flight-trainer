@@ -86,7 +86,14 @@ var PARAMS = {
     dt: 0.02,                    // parcel update interval (s), 50 Hz, not every physics step
     cell: 0.5,                   // deposit grid cell size (m)
     half: 100,                   // deposit grid half-extent around home (m)
-    seed: 12345                  // seed of the parcel random numbers, so runs are reproducible
+    seed: 12345,                 // seed of the parcel random numbers, so runs are reproducible
+    pass: {                      // test pass behind sprayPassSwath: north along x = 0 from home, no wind (m)
+      on: 20, off: 60, end: 80,  // spraying from z = -on to z = -off, last waypoint at z = -end
+      rowFrom: 25, rowTo: 55,    // the cross-track profile sums the deposit from z = -rowFrom to z = -rowTo
+      width: 10,                 // profile columns cover |x| < width
+      cell: 0.1, half: 30,       // finer deposit grid for the pass
+      cvMax: 30                  // CV limit for the effective swath (%)
+    }
   }
 };
 var MOTORS = [ // x, z, spin (+1 = counter clockwise seen from above)
@@ -254,7 +261,8 @@ Sim.prototype.reset = function(){
   // spray state: tank (L of liquid), airborne parcels, deposit grid (allocated on first use), and running totals.
   // sprayed is liquid (L). sprayedAi, deposited, and lost are active ingredient (L).
   this.tank = sprayCfgError(this.sprayCfg) ? 0 : this.sprayCfg.fillL; this.spraying = false;
-  this.parcels = []; this.dep = null; this.sprayAcc = 0; this.sprayClock = 0; this.emitClock = 0;
+  this.parcels = []; this.dep = null; this.depCell = PARAMS.spray.cell; this.depHalf = PARAMS.spray.half; this.sprayAcc = 0; this.sprayClock = 0; this.emitClock = 0;
+  this.sprayByMission = false; // true while a mission with spray legs owns the spraying switch
   this.sprayed = 0; this.sprayedAi = 0; this.deposited = 0; this.lost = 0;
   this.rng = mkRng(PARAMS.spray.seed);
 };
@@ -334,29 +342,34 @@ Sim.prototype.battCheck = function(){
 };
 // Wind speed is given at 10 m and follows a log profile down to the canopy.
 // windDir is the compass direction the wind comes FROM (0 = north = -Z, 90 = east = +X).
-// Mission: wps = [{x, y, z, survey}], y is height above ground. A leg ending at a survey
-// waypoint triggers a photo every `trig` meters of travel along the leg.
+// Mission: wps = [{x, y, z, survey, spray}], y is height above ground. A leg ending at a survey
+// waypoint triggers a photo every `trig` meters of travel along the leg. A leg ending at a spray waypoint is
+// sprayed: when a mission has any spray leg it owns the spraying switch, on along spray legs (from the leg start,
+// at height) and off everywhere else. It lets go when the mission ends for any reason, and an empty tank sends
+// the drone home (autoReason 'tank').
 Sim.prototype.startMission = function(wps, speed, trig){
   if (this.crashed || !wps.length || this.auto === 'critland') return;
   this.mission = { wps: wps, idx: 0, speed: speed, trig: trig, from: [this.pos[0], this.pos[2]], shot: null, hdg: null };
   this.photos = []; this.armed = true; this.auto = 'mission'; this.autoReason = null; this.rth = null; this.iv = [0, 0, 0];
+  this.sprayByMission = wps.some(function(w){ return w.spray; }); if (this.sprayByMission) this.spraying = false;
 };
 Sim.prototype.stopMission = function(){ if (this.auto === 'mission'){ this.auto = null; this.mission = null; this.posSp = null; this.altSp = null; } };
 Sim.prototype.missionVel = function(dt){
   var M = this.mission, wp = M.wps[M.idx], p = this.pos, v = [0, 0]; // low battery is handled by battCheck, as in manual flight
-  var lx = wp.x - M.from[0], lz = wp.z - M.from[1], L = Math.hypot(lx, lz), altOk = Math.abs(wp.y - p[1]) < 2.5, rem = 0;
+  var lx = wp.x - M.from[0], lz = wp.z - M.from[1], L = Math.hypot(lx, lz), altOk = Math.abs(wp.y - p[1]) < 2.5, rem = 0, sprayLeg = false;
   if (L > 0.01){
     var tx = lx/L, tz = lz/L, rx = p[0] - M.from[0], rz = p[2] - M.from[1];
     var along = rx*tx + rz*tz, cross = -rx*tz + rz*tx; rem = L - along;
     if (L > 3) M.hdg = Math.atan2(-tx, -tz);
     if (altOk){
       var sp = Math.min(M.speed, 0.7*rem + 0.4), cc = clamp(1.0*cross, -2, 2);
-      v = [tx*sp + tz*cc, tz*sp - tx*cc];
+      v = [tx*sp + tz*cc, tz*sp - tx*cc]; sprayLeg = !!wp.spray && along >= 0;
       if (wp.survey && along >= 0 && (M.shot === null || along - M.shot >= M.trig)){
         M.shot = along; this.photos.push({ x: p[0], z: p[2], y: p[1], psi: this.yaw() });
       }
     }
   }
+  if (this.sprayByMission){ if (!sprayLeg) this.spraying = false; else if (!this.spraying) this.command('sprayOn'); }
   if (altOk && rem < 1.0){
     if (wp.photo && !M.snapped){ M.snapped = true; this.photos.push({ x: p[0], z: p[2], y: p[1], psi: this.yaw() }); }
     if (wp.hold > 0){ M.holdT = (M.holdT || 0) + dt; if (M.holdT < wp.hold) return [clamp(1.2*(wp.x - p[0]), -2, 2), clamp(1.2*(wp.z - p[2]), -2, 2)]; }
@@ -380,9 +393,11 @@ Sim.prototype.windVec = function(h){
 // ingredient ai (L, the non-volatile part). Parcels have no inertia. Their velocity is the wind at their height,
 // plus the rotor downwash, plus the settling speed, plus a seeded turbulent random walk (u, v, w). Canopy capture is
 // out of scope: a parcel deposits on the grid cell where it reaches y = 0.
-Sim.prototype.sprayGrid = function(){ var S = PARAMS.spray, n = Math.round(2*S.half/S.cell); if (!this.dep) this.dep = new Float64Array(n*n); return this.dep; };
+// The grid size is per sim (depCell, depHalf, from PARAMS.spray at reset), so a measurement can use finer cells.
+// Change them only before the first deposit.
+Sim.prototype.sprayGrid = function(){ var n = Math.round(2*this.depHalf/this.depCell); if (!this.dep) this.dep = new Float64Array(n*n); return this.dep; };
 Sim.prototype.sprayLand = function(x, z, ai){
-  var S = PARAMS.spray, n = Math.round(2*S.half/S.cell), ix = Math.floor((x + S.half)/S.cell), iz = Math.floor((z + S.half)/S.cell);
+  var c = this.depCell, hf = this.depHalf, n = Math.round(2*hf/c), ix = Math.floor((x + hf)/c), iz = Math.floor((z + hf)/c);
   if (ix < 0 || iz < 0 || ix >= n || iz >= n){ this.lost += ai; return; }
   this.sprayGrid()[iz*n + ix] += ai; this.deposited += ai;
 };
@@ -458,16 +473,18 @@ Sim.prototype.sprayUpdate = function(h){
 };
 // Read-only views for the renderer, the deposit map, and scoring.
 Sim.prototype.sprayParcels = function(){ return this.parcels.map(function(p){ return [p.x, p.y, p.z, p.d]; }); };
-Sim.prototype.sprayDeposit = function(){ var S = PARAMS.spray; return { cell: S.cell, half: S.half, data: this.sprayGrid(), lost: this.lost }; };
+Sim.prototype.sprayDeposit = function(){ return { cell: this.depCell, half: this.depHalf, data: this.sprayGrid(), lost: this.lost }; };
 Sim.prototype.sprayStats = function(poly, sensitivePoly){ return sprayStats(this.sprayDeposit(), poly, sensitivePoly); };
 Sim.prototype.sprayAirborne = function(){ var a = this.sprayAcc*PARAMS.spray.nonVol; for (var i = 0; i < this.parcels.length; i++) a += this.parcels[i].ai; return a; };
 Sim.prototype.step = function(dt, s){
   var P = PARAMS, i; this.t += dt; this.avoiding = false; this.assisting = false;
+  if (this.sprayByMission && this.auto !== 'mission'){ this.spraying = false; this.sprayByMission = false; } // the spray mission has ended
   // spray parcels run at their own rate (PARAMS.spray.dt), and keep falling after a landing or a crash
   this.sprayClock += dt;
   while (this.sprayClock >= P.spray.dt - 1e-9){ this.sprayClock -= P.spray.dt; if (this.spraying || this.parcels.length || this.sprayAcc > 0) this.sprayUpdate(P.spray.dt); }
   if (this.crashed){ this.F = [0, 0, 0, 0]; return; }
   this.battCheck();
+  if (this.auto === 'mission' && this.sprayByMission && this.tank <= 0 && !this.onGround) this.startRth('tank');
   var st = { thr: s.thr, yaw: s.yaw, pitch: s.pitch, roll: s.roll };
   if (this.auto === 'mission' && Math.hypot(s.roll, s.pitch) > 0.3){ this.stopMission(); this.onEvent('takeover'); }
   if (this.auto === 'rth' && Math.hypot(s.roll, s.pitch) > P.rth.cancelStick) this.cancelRth();
@@ -636,5 +653,20 @@ Sim.prototype.telemetry = function(){
     lost_l: this.lost, parcels: this.parcels.length
   };
 };
+// Effective swath (m) of one straight spray pass, measured with the sim: o = { cls, mount, alt (m), speed (m/s) }.
+// A fresh sim with a full tank flies the pass in PARAMS.spray.pass in still neutral air, waits for every parcel,
+// and sums the deposit across the track. Returns { swath, profile }. Takes a few seconds; the planner uses a table
+// made from it (tools/spray-swath.js), not live calls.
+function sprayPassSwath(o){
+  var PS = PARAMS.spray.pass, max = sprayTankMax(), s = new Sim(), t = 0, h = 1/250, Z = { thr: 0, yaw: 0, pitch: 0, roll: 0 };
+  s.sprayCfg = { tankL: max, fillL: max, flowLmin: PARAMS.spray.flow, cls: o.cls, mount: o.mount }; s.reset(); s.depCell = PS.cell; s.depHalf = PS.half;
+  s.startMission([{ x: 0, y: o.alt, z: 0 }, { x: 0, y: o.alt, z: -PS.on }, { x: 0, y: o.alt, z: -PS.off, spray: true }, { x: 0, y: o.alt, z: -PS.end }], o.speed, 10);
+  while (t < 300 && !(s.onGround && !s.armed && !s.parcels.length)){ s.step(h, Z); t += h; }
+  var d = s.sprayDeposit(), n = Math.round(2*d.half/d.cell), i0 = Math.floor((d.half - PS.rowTo)/d.cell), i1 = Math.floor((d.half - PS.rowFrom)/d.cell);
+  var j0 = Math.round((d.half - PS.width)/d.cell), j1 = Math.round((d.half + PS.width)/d.cell), v = [];
+  for (var j = j0; j < j1; j++){ var sum = 0; for (var iz = i0; iz < i1; iz++) sum += d.data[iz*n + j]; v.push(sum); }
+  var prof = { dx: d.cell, v: v };
+  return { swath: effectiveSwath(prof, PS.cvMax), profile: prof };
+}
 /*SIM-END*/
 

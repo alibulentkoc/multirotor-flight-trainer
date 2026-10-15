@@ -20,7 +20,7 @@
     <header><h2>Flight plan</h2><button id="planClose">Close</button></header>
     <div class="plangrid">
       <div>
-        <div class="seg two" id="planModes"><button data-pm="area" aria-pressed="true">Survey area</button><button data-pm="route">Waypoint route</button></div>
+        <div class="seg" id="planModes"><button data-pm="area" aria-pressed="true">Survey area</button><button data-pm="route">Waypoint route</button><button data-pm="spray">Spray area</button></div>
         <canvas id="map" width="840" height="840" aria-label="Top-down planning map, north up"></canvas>
         <div class="row3"><button id="pgUndo">Undo point</button><button id="pgClear">Clear</button><button id="pgWhole">Whole field</button></div>
         <div class="row3"><button id="pgIn">Zoom in</button><button id="pgOut">Zoom out</button><button id="pgFit">Fit to plan</button></div>
@@ -40,10 +40,16 @@
           <p class="note wide" id="calibMsg" style="margin:0"></p>
           <div class="wide" id="calibBox" hidden style="display:grid; grid-template-columns:1fr 92px; gap:6px"><input type="number" id="calibDist" min="1" placeholder="True distance (m)" aria-label="True distance in meters"><button id="calibApply">Apply</button></div>
           <button class="wide" id="fieldRemove" hidden>Remove field image</button>
-          <label for="pCam">Camera</label><select id="pCam" class="wide"></select>
-          <label for="pAlt">Altitude above ground (m)</label><input type="number" id="pAlt" min="5" max="120" value="40">
-          <label for="pFront">Front overlap (%)</label><input type="number" id="pFront" min="10" max="95" value="75">
-          <label for="pSide">Side overlap (%)</label><input type="number" id="pSide" min="10" max="95" value="70">
+          <label class="sv" for="pCam">Camera</label><select id="pCam" class="wide sv"></select>
+          <label class="sv" for="pAlt">Altitude above ground (m)</label><input class="sv" type="number" id="pAlt" min="5" max="120" value="40">
+          <label class="sv" for="pFront">Front overlap (%)</label><input class="sv" type="number" id="pFront" min="10" max="95" value="75">
+          <label class="sv" for="pSide">Side overlap (%)</label><input class="sv" type="number" id="pSide" min="10" max="95" value="70">
+          <label class="sp" for="sAlt" hidden>Spray height above ground (m)</label><input class="sp" hidden type="number" id="sAlt" step="0.5">
+          <label class="sp" for="sSpacing" hidden>Line spacing (m)</label><input class="sp" hidden type="number" id="sSpacing" step="0.1">
+          <label class="sp" for="sFlow" hidden>Flow rate (L/min)</label><input class="sp" hidden type="number" id="sFlow" step="0.1">
+          <label class="sp" for="sCls" hidden>Droplet size</label><select class="wide sp" hidden id="sCls"></select>
+          <label class="sp" for="sMount" hidden>Nozzles</label><select class="wide sp" hidden id="sMount"><option value="rotor">Under the rotors</option><option value="boom">On a boom, outside the rotors</option></select>
+          <label class="sp" for="sFill" hidden>Tank fill (L)</label><input class="sp" hidden type="number" id="sFill" step="0.05">
           <label for="pSpeed">Speed (m/s)</label><input type="number" id="pSpeed" min="1" max="8" step="0.5" value="5">
           <label for="pDir">Flight line direction (deg)</label><input type="number" id="pDir" min="0" max="179" step="5" value="0">
           <label for="pElev">Field elevation (m MSL)</label><input type="number" id="pElev" min="-100" max="4000" value="220">
